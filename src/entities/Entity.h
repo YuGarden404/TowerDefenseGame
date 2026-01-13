@@ -5,7 +5,9 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-
+#include <iostream>
+#include <cmath>
+#include <vector>
 
 class Entity {
 protected:
@@ -24,7 +26,7 @@ public:
     virtual ~Entity() = default;
     //纯虚函数，每一帧都要执行逻辑
     //deltaTime 是两帧之间的时间差，用于平滑计算
-    virtual void update(float deltaTime) = 0;
+    virtual void update(float deltaTime, std::vector<Entity*>& entities) = 0;
     //扣血函数
     void takeDamage(int damage);
     //判断是否死亡(血量<=0)
@@ -35,6 +37,9 @@ public:
     //设置位置
     void setX(float x);
     void setY(float y);
+
+    static float manhattanDistance(float x1, float y1, float x2, float y2);
+    static float euclideanDistance(float x1, float y1, float x2, float y2);
 };
 
 

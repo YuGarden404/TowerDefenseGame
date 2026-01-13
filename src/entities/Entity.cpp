@@ -3,7 +3,6 @@
 //
 
 #include "Entity.h"
-#include <iostream>
 
 Entity::Entity(): x(0),y(0),hp(0),maxHp(0),speed(0){}
 
@@ -61,3 +60,19 @@ void Entity::setX(const float x)
  {
      this->y = y;
  }
+
+float Entity::manhattanDistance(const float x1, const float y1, const float x2, const float y2)
+{
+    float dx = x1 - x2;
+    float dy = y1 - y2;
+    if(dx<0)dx=-dx;
+    if(dy<0)dy=-dy;
+    return dx+dy;
+}
+
+float Entity::euclideanDistance(float x1, float y1, float x2, float y2)
+{
+    const float dx = x1 - x2;
+    const float dy = y1 - y2;
+    return std::sqrt(dx*dx+dy*dy);
+}
