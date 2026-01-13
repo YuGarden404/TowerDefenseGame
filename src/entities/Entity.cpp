@@ -9,7 +9,7 @@ Entity::Entity(): x(0),y(0),hp(0),maxHp(0),speed(0){}
 Entity::Entity(const float x, const float y, const int hp, const int maxHp, const float speed)
 :x(x),y(y)
 {
-    if(hp>0&&maxHp>0&&hp<=maxHp&&speed>0)
+    if(hp>0&&maxHp>0&&hp<=maxHp&&speed>=0)
     {
         this->hp = hp;
         this->maxHp = maxHp;

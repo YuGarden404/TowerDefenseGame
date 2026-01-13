@@ -35,10 +35,13 @@ class Map {
     static std::string TileTypeToString(TileType type);
 public:
     //公共成员函数
-    //构造函数
-    Map(int w,int h);
+    //getter
+    [[nodiscard]] int getWidth() const {return width;}
+    [[nodiscard]] int getHeight() const {return height;}
     //获取指定位置的地块类型，需包含边界检查
     [[nodiscard]] TileType getTileType(int x, int y) const;
+    //构造函数
+    Map(int w,int h);
     //设置指定位置的地块类型
     void setTileType(int x, int y, TileType type);
     //向 enemyPath 中添加一个路径点

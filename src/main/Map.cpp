@@ -62,7 +62,7 @@ void Map::setTileType(const int x, const int y, const TileType type)
 {
     if(isValidPos(x,y))
     {
-        std::cout << "修改地图(" << x << "," << y << ")成功，由" << TileTypeToString(grid[x][y]) << "修改为" << TileTypeToString(type) << std::endl;
+        std::cout << "修改地图(" << x << "," << y << ")成功，由" << TileTypeToString(grid[y][x]) << "修改为" << TileTypeToString(type) << std::endl;
         grid[y][x] = type;
     }else std::cout << "获取地图(" << x << "," << y << ")信息有误，非法索引" << std::endl;
 }
