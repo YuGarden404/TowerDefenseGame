@@ -80,3 +80,50 @@ const std::vector<Point>& Map::getEnemyPath() const
 {
     return enemyPath;
 }
+
+bool Map::loadFromFile(const std::string& filename)
+{
+    std::ifstream file(filename);
+    if(!file.is_open())
+    {
+        std::cout << "地图文件打开错误" << std::endl;
+        return false;
+    }
+    enemyPath.clear();
+    grid.clear();
+
+    std::string line;
+    while(std::getline(file,line))
+    {
+        if(line.empty()||line.starts_with("#"))continue;
+        if(line.starts_with("SIZE:"))
+        {
+            std::stringstream ss(line.substr(5));
+            ss >> width >> height;
+            grid.resize(height, std::vector(width, TileType::GROUND));
+        }else if(line.starts_with("PATH:"))
+        {
+            std::stringstream ss(line.substr(5));
+            std::string pointStr;
+            while(ss >> pointStr)
+            {
+                if(size_t pos = pointStr.find(','); pos!=std::string::npos)
+                {
+                    int x = std::stoi(pointStr.substr(0,pos));
+                    int y = std::stoi(pointStr.substr(pos+1));
+
+                    setTileType(x,y,TileType::PATH);
+                    addPathPoint(x,y);
+                }
+            }
+        }
+    }
+    if(!enemyPath.empty())
+    {
+        setTileType(enemyPath.front().x,enemyPath.front().y,TileType::START);
+        setTileType(enemyPath.back().x,enemyPath.back().y,TileType::END);
+    }
+    file.close();
+    std::cout << "地图加载成功" << std::endl;
+    return true;
+}

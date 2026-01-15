@@ -7,6 +7,10 @@
 
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <ranges>
+#include <sstream>
+
 
 enum class TileType
 {
@@ -48,6 +52,7 @@ public:
     void addPathPoint(int x, int y);
     //返回路径序列供敌人使用
     [[nodiscard]] const std::vector<Point>& getEnemyPath() const;
+    bool loadFromFile(const std::string& filename);
 };
 
 
