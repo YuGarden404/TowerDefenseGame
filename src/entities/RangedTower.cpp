@@ -3,6 +3,8 @@
 //
 
 #include "RangedTower.h"
+#include "../components/SlowAffix.h"
+#include "../components/BurnAffix.h"
 
 RangedTower::RangedTower()
 :Tower(10,10,0.5f,0,0,10,10){}
@@ -17,6 +19,16 @@ void RangedTower::attack(Enemy* target)
     {
         std::cout << "远程塔攻击(" << target->getX() << "," << target->getY() << ")成功，造成" << attackPower << "点伤害" << std::endl;
         target->takeDamage(attackPower);
+    }
+    for(auto &effect:onHitEffects)
+    {
+        if(effect == "Slow")
+        {
+            target->addAffix(std::make_unique<SlowAffix>(0.5f,"Slow",0.5f));
+        }else if(effect == "Burn")
+        {
+            target->addAffix(std::make_unique<BurnAffix>(0.5f,"Burn",5));
+        }
     }
 }
 

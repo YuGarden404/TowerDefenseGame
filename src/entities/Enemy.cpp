@@ -4,8 +4,8 @@
 
 #include "Enemy.h"
 
-Enemy::Enemy(Map& map, const float x, const float y, const int hp, const int maxHp, const float speed)
-:Entity(x,y,hp,maxHp,speed),map(map){}
+Enemy::Enemy(Map& map, const float x, const float y, const int hp, const int maxHp, const float speed, int reward)
+:Entity(x,y,hp,maxHp,speed),map(map),reward(reward){}
 
 void Enemy::update(const float deltaTime, std::vector<Entity*>& entities) {
     if (isDead() || pathIndex >= map.getEnemyPath().size()) return;
@@ -27,4 +27,8 @@ void Enemy::update(const float deltaTime, std::vector<Entity*>& entities) {
             takeDamage(hp);
         }
     }
+}
+
+int Enemy::getReward() const {
+    return reward;
 }
