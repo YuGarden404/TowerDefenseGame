@@ -9,9 +9,9 @@
 #include <iostream>
 
 class SlowAffix : public Affix {
-    float slowAmount;
+    float slowFactor;
 public:
-    SlowAffix(Entity* owner, float duration, const std::string& name, float slowAmount);
+    SlowAffix(float duration, const std::string& name, float slowFactor);
     void onAttach(Entity* entity) override;
     void onDetach() override;
 };

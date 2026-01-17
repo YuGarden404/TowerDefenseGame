@@ -86,6 +86,21 @@ void Entity::setX(const float x)
      this->y = y;
  }
 
+void Entity::setHp(const int hp)
+{
+    this->hp = hp > 0&&hp <= maxHp? hp : 0;
+}
+
+void Entity::setMaxHp(const int maxHp)
+{
+    this->maxHp = maxHp > 0? maxHp : 0;
+}
+
+void Entity::setSpeed(const float speed)
+{
+    this->speed = speed > 0? speed : 0;
+}
+
 void Entity::addAffix(std::unique_ptr<Affix> affix)
 {
     if(!affix)return;

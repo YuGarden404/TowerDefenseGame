@@ -51,6 +51,9 @@ public:
     //setter
     void setX(float x);
     void setY(float y);
+    void setHp(int hp);
+    void setMaxHp(int maxHp);
+    void setSpeed(float speed);
     //设置词缀的 owner 为自己，调用词缀的 onAttach，然后存入列表
     void addAffix(std::unique_ptr<Affix> affix);
 
