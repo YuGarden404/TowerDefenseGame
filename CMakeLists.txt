@@ -18,4 +18,7 @@ add_executable(TowerDefense main.cpp
         src/main/Game.cpp
         src/main/Game.h
         src/main/Map.cpp
-        src/main/Map.h)
+        src/main/Map.h
+        src/components/SlowAffix.cpp
+        src/components/SlowAffix.h
+        src/components/SlowAffix.h)
