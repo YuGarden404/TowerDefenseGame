@@ -6,7 +6,6 @@
 #define SLOWAFFIX_H
 
 #include "Affix.h"
-#include <iostream>
 
 class SlowAffix : public Affix {
     float slowFactor;

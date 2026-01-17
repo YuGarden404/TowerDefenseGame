@@ -21,4 +21,7 @@ add_executable(TowerDefense main.cpp
         src/main/Map.h
         src/components/SlowAffix.cpp
         src/components/SlowAffix.h
-        src/components/SlowAffix.h)
+        src/components/SlowAffix.h
+        src/components/BurnAffix.cpp
+        src/components/BurnAffix.h
+        src/components/BurnAffix.h)
