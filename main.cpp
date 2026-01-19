@@ -4,11 +4,10 @@
 
 int main()
 {
-    Game game(1,1);
-    if(game.getMap().loadFromFile("../file/map.txt"))
+    if(Game game(1,1); game.getMap().loadFromFile("../file/map.txt"))
     {
-        game.addEntity(std::make_unique<RangedTower>(30,10,0.5f,4,7,10,10));
-        game.addEntity(std::make_unique<RangedTower>(30,10,0.5f,12,7,10,10));
+        game.placeTower(std::make_unique<RangedTower>(5, 10, 0.5f, 4, 7, 10, 10));
+        game.placeTower(std::make_unique<MeleeTower>(5, 5, 100, 100, 10, 1.0f, 0.5f, 0, 5));
         int frameCount = 0; //帧计数器
         while(true)
         {

@@ -113,3 +113,33 @@ bool Game::purchaseUpgrade(const int x, const int y, std::string effectName)
     return false;
 }
 
+bool Game::placeTower(std::unique_ptr<Tower> tower)
+{
+    if(!tower)return false;
+    int ix = static_cast<int>(tower->getX()+0.5f);
+    int iy = static_cast<int>(tower->getY()+0.5f);
+    TileType tileType = map.getTileType(ix,iy);
+    bool canPlace = false;
+    if(dynamic_cast<MeleeTower*>(tower.get()))
+    {
+        canPlace = tileType == TileType::PATH;
+    }else if(dynamic_cast<RangedTower*>(tower.get()))
+    {
+        canPlace = tileType == TileType::GROUND;
+    }
+    if(canPlace)
+    {
+        for(const auto& e : allEntities)
+        {
+            if(dynamic_cast<Tower*>(e.get())&&static_cast<int>(e->getX()+0.5f)==ix&&static_cast<int>(e->getY()+0.5f)==iy)
+            {
+                std::cout << "放置失败：该位置已有建筑" << std::endl;
+                return false;
+            }
+        }
+        addEntity(std::move(tower));
+        return true;
+    }
+    std::cout << "放置失败：放置对象与地形类型不匹配" << std::endl;
+    return false;
+}

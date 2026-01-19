@@ -9,6 +9,7 @@
 #include "../entities/Entity.h"
 #include "../entities/Enemy.h"
 #include "../entities/RangedTower.h"
+#include "../entities/MeleeTower.h"
 #include <memory>
 #include <thread>
 
@@ -37,6 +38,8 @@ public:
     void render() const;
     //升级塔
     bool purchaseUpgrade(int x, int y, std::string effectName);
+    //放置塔
+    bool placeTower(std::unique_ptr<Tower> tower);
 };
 
 
