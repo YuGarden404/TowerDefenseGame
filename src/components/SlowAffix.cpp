@@ -18,7 +18,7 @@ void SlowAffix::onAttach(Entity* entity)
     if(owner)
     {
         const float currentSpeed = owner->getSpeed();
-        owner->setSpeed(currentSpeed / (1.0f - slowFactor));
+        owner->setSpeed(currentSpeed * (1.0f - slowFactor));
         std::cout << "[词缀生效] " << getName() << " 挂载于实体，当前速度降至: "
                   << owner->getSpeed() << std::endl;
     }
