@@ -23,7 +23,7 @@ public:
     //实现具体的近战塔更新逻辑
     void update(float deltaTime, std::vector<Entity*>& entities) override;
     //析构函数
-    ~MeleeTower();
+    ~MeleeTower() override;
 };
 
 

@@ -12,6 +12,15 @@ MeleeTower::MeleeTower(const float x, const float y, const int hp, const int max
     blockedEnemies.clear();
 }
 
+MeleeTower::~MeleeTower() {
+    for (auto* enemy : blockedEnemies) {
+        if (enemy) {
+            enemy->setBlocked(false);
+        }
+    }
+    blockedEnemies.clear();
+}
+
 void MeleeTower::attack(Enemy* target)
 {
     if (!target || target->isDead()) return;
@@ -73,17 +82,6 @@ void MeleeTower::update(const float deltaTime, std::vector<Entity*>& entities)
         {
             attack(target);
             lastAttackTimer = 0.0f;
-        }
-    }
-}
-
-MeleeTower::~MeleeTower()
-{
-    for(const auto& enemy : blockedEnemies)
-    {
-        if(enemy)
-        {
-            enemy->setBlocked(false);
         }
     }
 }
