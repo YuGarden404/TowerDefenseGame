@@ -1,6 +1,9 @@
 //
 // Created by Lenovo on 26-1-12.
 //
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "Game.h"
 #include <algorithm>
@@ -55,7 +58,12 @@ void Game::addEntity(std::unique_ptr<Entity> entity)
 
 void Game::render() const
 {
-    system("cls");
+#ifdef _WIN32
+    COORD coord = {0, 0};
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+#else
+    std::cout << "\033[H"; // Linux/Mac 下的清屏控制字符
+#endif
     std::cout << "当前金币: " << money << std::endl;
     for (int i = 0; i < map.getHeight(); i++) {
         for (int j = 0; j < map.getWidth(); j++) {
