@@ -9,6 +9,7 @@ Enemy::Enemy(Map& map, const float x, const float y, const int hp, const int max
 
 void Enemy::update(const float deltaTime, std::vector<Entity*>& entities) {
     if (isDead() || pathIndex >= map.getEnemyPath().size()) return;
+    this->updateAffixes(deltaTime);
     if(!isBlocked)
     {
         const Point& target = map.getEnemyPath()[pathIndex];

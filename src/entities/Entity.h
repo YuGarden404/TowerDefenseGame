@@ -24,8 +24,6 @@ protected:
     std::vector<std::unique_ptr<Affix>> affixes;
 private:
     //私有成员函数
-    //专门处理词缀的生命周期
-    void updateAffixes(float deltaTime);
 public:
     //公共成员函数
     //构造函数
@@ -56,6 +54,8 @@ public:
     void setSpeed(float speed);
     //设置词缀的 owner 为自己，调用词缀的 onAttach，然后存入列表
     void addAffix(std::unique_ptr<Affix> affix);
+    //专门处理词缀的生命周期
+    void updateAffixes(float deltaTime);
 
     static float manhattanDistance(float x1, float y1, float x2, float y2);
     static float euclideanDistance(float x1, float y1, float x2, float y2);

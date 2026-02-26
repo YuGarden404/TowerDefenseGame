@@ -129,7 +129,6 @@ void Entity::updateAffixes(const float deltaTime)
 void Entity::update(float deltaTime, std::vector<Entity*>& entities)
 {
     if(isDead())return;
-    updateAffixes(deltaTime);
 }
 
 

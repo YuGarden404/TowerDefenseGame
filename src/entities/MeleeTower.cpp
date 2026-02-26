@@ -29,10 +29,9 @@ void MeleeTower::attack(Enemy* target)
     }
 }
 
-void MeleeTower::update(float deltaTime, std::vector<Entity*>& entities)
+void MeleeTower::update(const float deltaTime, std::vector<Entity*>& entities)
 {
-    if(isDead())return;
-    lastAttackTimer += deltaTime;
+    Tower::update(deltaTime,entities);
     std::erase_if(blockedEnemies,[](Enemy* enemy)
     {
         if(!enemy||enemy->isDead())
