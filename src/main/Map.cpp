@@ -55,7 +55,7 @@ TileType Map::getTileType(const int x, const int y) const
         return grid[y][x];
     }
     std::cout << "获取地图(" << x << "," << y << ")信息有误，非法索引" << std::endl;
-    return TileType::ERROR;
+    return TileType::TILE_ERROR;
 }
 
 void Map::setTileType(const int x, const int y, const TileType type)

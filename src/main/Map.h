@@ -18,7 +18,7 @@ enum class TileType
     PATH,   //路径，可放近战塔及敌人通过
     START,  //起点
     END,    //终点
-    ERROR,  //错误(仅软件调试阶段使用)
+    TILE_ERROR,  //错误(仅软件调试阶段使用)
 };
 
 struct Point
