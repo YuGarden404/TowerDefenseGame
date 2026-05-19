@@ -33,10 +33,17 @@ int main()
         5, 4,
         100, 100));
 
-    bool flag[3] = {false, false, false};
+    bool flag[9] = {false, false, false, false, false, false, false, false, false};
+
     flag[0] = game.purchaseAffix(5, 4, AffixId::Burn);
-    flag[1] = game.purchaseAffix(5, 4, AffixId::Slow);
-    flag[2] = game.purchaseAffix(5, 5, AffixId::Berserk);
+    flag[1] = game.purchaseAffix(5, 4, AffixId::Burn);
+    flag[2] = game.purchaseAffix(5, 4, AffixId::Slow);
+    flag[3] = game.purchaseAffix(5, 5, AffixId::Berserk);
+    flag[4] = game.purchaseAffix(5, 5, AffixId::Burn);
+    flag[5] = game.purchaseAffix(5, 4, AffixId::Berserk);
+    flag[6] = game.purchaseAffix(5, 4, AffixId::Blink);
+    flag[7] = game.sellAffix(5, 4, AffixId::Slow);
+    flag[8] = game.sellAffix(5, 4, AffixId::Slow);
 
     int frameCount = 0;
 
@@ -64,9 +71,24 @@ int main()
     {
         std::cout << "Defeat!" << std::endl;
     }
+
+    std::cout << "==================================" << std::endl;
+
     std::cout << "Buy Burn: " << flag[0] << std::endl;
-    std::cout << "Buy Slow: " << flag[1] << std::endl;
-    std::cout << "Buy Berserk: " << flag[2] << std::endl;
+    std::cout << "Buy Burn again: " << flag[1] << std::endl;
+    std::cout << "Buy Slow: " << flag[2] << std::endl;
+    std::cout << "Buy Berserk: " << flag[3] << std::endl;
+
+    std::cout << "==================================" << std::endl;
+
+    std::cout << "Wrong Burn on melee: " << flag[4] << std::endl;
+    std::cout << "Wrong Berserk on ranged: " << flag[5] << std::endl;
+    std::cout << "Wrong Blink on tower: " << flag[6] << std::endl;
+
+    std::cout << "==================================" << std::endl;
+
+    std::cout << "Sell Slow: " << flag[7] << std::endl;
+    std::cout << "Sell Slow again: " << flag[8] << std::endl;
 
     return 0;
 }

@@ -47,9 +47,7 @@ int getAffixBuyPrice(AffixId id)
     case AffixId::Berserk:
         return 200;
     case AffixId::Swift:
-        return 120;
     case AffixId::Blink:
-        return 180;
     default:
         return 0; // 默认价格
     }

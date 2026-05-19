@@ -291,7 +291,7 @@ bool Game::sellAffix(int x, int y, AffixId affixId)
 
     if (entity->unequipAffix(affixId))
     {
-        money += getAffixSellPrice(affixId);
+        addMoney(getAffixSellPrice(affixId));
         return true;
     }
 

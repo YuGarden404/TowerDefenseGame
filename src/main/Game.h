@@ -28,6 +28,14 @@ class Game
     bool gameOver;
     bool victory;
 
+    // 根据地图坐标查找该格上的实体
+    std::shared_ptr<Entity> findEntityAt(int x, int y);
+
+    // 判断某个实体是否允许装备指定词缀
+    bool canEquipAffixTo(const Entity &entity, AffixId affixId) const;
+
+    bool canPurchaseAffixFor(const Entity &entity, AffixId affixId) const;
+
 public:
     // 公共成员函数
     // 构造函数
@@ -71,14 +79,6 @@ public:
 
     // 出售指定坐标实体身上的词缀，返还购买价 80%
     bool sellAffix(int x, int y, AffixId affixId);
-
-    // 根据地图坐标查找该格上的实体
-    std::shared_ptr<Entity> findEntityAt(int x, int y);
-
-    // 判断某个实体是否允许装备指定词缀
-    bool canEquipAffixTo(const Entity &entity, AffixId affixId) const;
-
-    bool canPurchaseAffixFor(const Entity &entity, AffixId affixId) const;
 };
 
 #endif // GAME_H
