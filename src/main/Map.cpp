@@ -14,10 +14,12 @@ std::string Map::TileTypeToString(const TileType type)
 {
     switch (type)
     {
-    case TileType::GROUND:
-        return "GROUND";
-    case TileType::PATH:
-        return "PATH";
+    case TileType::GRASS:
+        return "GRASS";
+    case TileType::ROAD:
+        return "ROAD";
+    case TileType::ROCK:
+        return "ROCK";
     case TileType::START:
         return "START";
     case TileType::END:
@@ -50,7 +52,7 @@ bool Map::hasDuplicatePoint(const std::vector<Point> &path)
 Map::Map(const int w, const int h)
 {
     // 默认是空地
-    if (w < 0 || h < 0)
+    if (w <= 0 || h <= 0)
     {
         width = 0, height = 0;
         grid.clear();
@@ -58,7 +60,7 @@ Map::Map(const int w, const int h)
         return;
     }
     width = w, height = h;
-    grid.assign(height, std::vector(width, TileType::GROUND));
+    grid.assign(height, std::vector(width, TileType::GRASS));
     enemyPaths.clear();
 }
 
@@ -115,7 +117,11 @@ bool Map::addPath(const std::vector<Point> &path)
 
     for (const auto &point : path)
     {
-        setTileType(point.x, point.y, TileType::PATH);
+        TileType current = getTileType(point.x, point.y);
+        if (current != TileType::START && current != TileType::END)
+        {
+            setTileType(point.x, point.y, TileType::ROAD);
+        }
     }
 
     setTileType(path.front().x, path.front().y, TileType::START);
@@ -157,7 +163,7 @@ size_t Map::getPathCount() const
 bool Map::isPathTile(const int x, const int y) const
 {
     const TileType type = getTileType(x, y);
-    return type == TileType::PATH || type == TileType::START || type == TileType::END;
+    return type == TileType::ROAD || type == TileType::START || type == TileType::END;
 }
 
 bool Map::isAdjacentToPath(const int x, const int y) const
@@ -183,7 +189,7 @@ bool Map::canPlaceMeleeTower(const int x, const int y) const
 
 bool Map::canPlaceRangedTower(const int x, const int y) const
 {
-    return getTileType(x, y) == TileType::GROUND && isAdjacentToPath(x, y);
+    return getTileType(x, y) == TileType::GRASS && isAdjacentToPath(x, y);
 }
 
 bool Map::loadFromFile(const std::string &filename)
@@ -217,13 +223,13 @@ bool Map::loadFromFile(const std::string &filename)
                 std::cout << "Invalid map size." << std::endl;
                 return false;
             }
-            grid.assign(height, std::vector<TileType>(width, TileType::GROUND));
+            grid.assign(height, std::vector<TileType>(width, TileType::GRASS));
         }
-        else if (line.starts_with("PATH:"))
+        else if (line.starts_with("ROAD:"))
         {
             if (grid.empty())
             {
-                std::cout << "PATH appears before SIZE." << std::endl;
+                std::cout << "ROAD appears before SIZE." << std::endl;
                 return false;
             }
 
@@ -250,7 +256,110 @@ bool Map::loadFromFile(const std::string &filename)
                 return false;
             }
         }
+        else if (line.starts_with("ROCK:"))
+        {
+            if (grid.empty())
+            {
+                std::cout << "ROCK appears before SIZE." << std::endl;
+                return false;
+            }
+
+            std::stringstream ss(line.substr(5));
+            std::string pointStr;
+
+            while (ss >> pointStr)
+            {
+                const size_t pos = pointStr.find(',');
+                if (pos == std::string::npos)
+                {
+                    std::cout << "Invalid point format." << std::endl;
+                    return false;
+                }
+
+                const int x = std::stoi(pointStr.substr(0, pos));
+                const int y = std::stoi(pointStr.substr(pos + 1));
+                if (!isValidPos(x, y))
+                {
+                    std::cout << "Invalid rock position." << std::endl;
+                    return false;
+                }
+                addRock(x, y);
+            }
+        }
+        else
+        {
+            std::cout << "Unknown line type." << std::endl;
+            return false;
+        }
     }
 
     return !enemyPaths.empty();
+}
+
+bool Map::saveToFile(const std::string &filename) const
+{
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cout << "Failed to open file for saving." << std::endl;
+        return false;
+    }
+
+    file << "SIZE:" << width << " " << height << std::endl;
+
+    bool hasRock = false;
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            if (grid[y][x] == TileType::ROCK)
+            {
+                hasRock = true;
+            }
+        }
+    }
+
+    if (hasRock)
+    {
+        file << "ROCK:";
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                if (grid[y][x] == TileType::ROCK)
+                {
+                    file << x << "," << y << " ";
+                }
+            }
+        }
+        file << std::endl;
+    }
+
+    for (const auto &path : enemyPaths)
+    {
+        file << "ROAD:";
+        for (const auto &point : path)
+        {
+            file << point.x << "," << point.y << " ";
+        }
+        file << std::endl;
+    }
+
+    return true;
+}
+
+bool Map::addRock(int x, int y)
+{
+    if (!isValidPos(x, y))
+    {
+        return false;
+    }
+
+    if (isPathTile(x, y))
+    {
+        return false;
+    }
+
+    grid[y][x] = TileType::ROCK;
+    return true;
 }

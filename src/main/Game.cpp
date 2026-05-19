@@ -150,11 +150,14 @@ void Game::render() const
             {
                 switch (map.getTileType(j, i))
                 {
-                case TileType::GROUND:
+                case TileType::GRASS:
                     std::cout << ".";
                     break;
-                case TileType::PATH:
+                case TileType::ROAD:
                     std::cout << "#";
+                    break;
+                case TileType::ROCK:
+                    std::cout << "O";
                     break;
                 case TileType::START:
                     std::cout << "S";
@@ -203,7 +206,6 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
         return false;
     int ix = static_cast<int>(tower->getX() + 0.5f);
     int iy = static_cast<int>(tower->getY() + 0.5f);
-    TileType tileType = map.getTileType(ix, iy);
     bool canPlace = false;
     if (dynamic_cast<MeleeTower *>(tower.get()))
     {

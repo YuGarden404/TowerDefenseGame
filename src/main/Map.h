@@ -8,14 +8,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <ranges>
 #include <sstream>
 #include <string>
 
 enum class TileType
 {
-    GROUND,     // 地面，可放远程塔
-    PATH,       // 路径，可放近战塔及敌人通过
+    GRASS,      // 地面，可放远程塔
+    ROAD,       // 路径，可放近战塔及敌人通过
+    ROCK,       // 石头，不能放塔，不影响路径逻辑
     START,      // 起点
     END,        // 终点
     TILE_ERROR, // 错误(仅软件调试阶段使用)
@@ -68,6 +68,15 @@ public:
     [[nodiscard]] bool canPlaceMeleeTower(int x, int y) const;
     [[nodiscard]] bool canPlaceRangedTower(int x, int y) const;
     bool loadFromFile(const std::string &filename);
+
+    // 将当前地图保存到文件
+    bool saveToFile(const std::string &filename) const;
+
+    // 设置某个格子为石头
+    bool addRock(int x, int y);
+
+    // 判断某个格子是否是石头
+    bool isRockTile(int x, int y) const { return getTileType(x, y) == TileType::ROCK; }
 };
 
 #endif // MAP_H
