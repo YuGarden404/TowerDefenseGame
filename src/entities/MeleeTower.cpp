@@ -5,82 +5,120 @@
 #include "MeleeTower.h"
 
 #include <algorithm>
+#include <climits>
 
 MeleeTower::MeleeTower(const float x, const float y, const int hp, const int maxHp, const int attackPower, const float attackCooldown, const float attackRange, float speed, const int blockLimit)
-:Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp),blockLimit(blockLimit)
+    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, speed), blockLimit(blockLimit)
 {
     blockedEnemies.clear();
 }
 
-MeleeTower::~MeleeTower() {
-    for (auto* enemy : blockedEnemies) {
-        if (enemy) {
+MeleeTower::~MeleeTower()
+{
+    for (auto &weakEnemy : blockedEnemies)
+    {
+        if (auto enemy = weakEnemy.lock())
+        {
             enemy->setBlocked(false);
+            enemy->clearBlockedBy();
         }
     }
-    blockedEnemies.clear();
 }
 
-void MeleeTower::attack(Enemy* target)
+void MeleeTower::attack(Enemy *target)
 {
-    if (!target || target->isDead()) return;
-    std::cout << "近战塔在(" << getX() << "," << getY() << ")攻击敌人，造成" << attackPower << "点伤害" << std::endl;
+    if (!target || target->isDead())
+        return;
     target->takeDamage(attackPower);
-    for(auto& effect : onHitEffects)
+    for (auto &effect : onHitEffects)
     {
-        if(effect == "Slow")
+        if (effect == "Slow")
         {
             target->addAffix(std::make_unique<SlowAffix>(0.5f, "Slow", 0.5f));
-        }else if(effect == "Burn")
+        }
+        else if (effect == "Burn")
         {
             target->addAffix(std::make_unique<BurnAffix>(0.5f, "Burn", 5));
         }
     }
 }
 
-void MeleeTower::update(const float deltaTime, std::vector<Entity*>& entities)
+void MeleeTower::update(const float deltaTime, std::vector<std::shared_ptr<Entity>> &entities)
 {
-    Tower::update(deltaTime,entities);
-    std::erase_if(blockedEnemies,[](Enemy* enemy)
+    if (isDead())
+        return;
+
+    updateAffixes(deltaTime);
+    lastAttackTimer += deltaTime;
+
+    std::shared_ptr<Entity> self = nullptr;
+    for (const auto &entity : entities)
     {
-        if(!enemy||enemy->isDead())
+        if (entity.get() == this)
         {
-            if(enemy) enemy->setBlocked(false);
-            return true;
+            self = entity;
+            break;
         }
-        return false;
-    });
-    for(const auto& entity : entities)
+    }
+    if (!self)
+        return;
+    blockedEnemies.erase(
+        std::remove_if(blockedEnemies.begin(), blockedEnemies.end(),
+                       [this](const std::weak_ptr<Enemy> &weakEnemy)
+                       {
+                           auto enemy = weakEnemy.lock();
+
+                           if (!enemy)
+                           {
+                               return true;
+                           }
+
+                           if (enemy->isDead() ||
+                               euclideanDistance(getX(), getY(), enemy->getX(), enemy->getY()) > attackRange)
+                           {
+                               enemy->setBlocked(false);
+                               enemy->clearBlockedBy();
+                               return true;
+                           }
+
+                           return false;
+                       }),
+        blockedEnemies.end());
+    for (const auto &entity : entities)
     {
-        if(!entity||entity->isDead())continue;
-        if(auto* enemy = dynamic_cast<Enemy*>(entity))
+        if (auto enemy = std::dynamic_pointer_cast<Enemy>(entity))
         {
-            if(!enemy->getBlocked()&&euclideanDistance(getX(), getY(), enemy->getX(), enemy->getY()) <= attackRange && blockedEnemies.size() < blockLimit)
+            if (!enemy->isDead() && !enemy->getBlocked() &&
+                euclideanDistance(getX(), getY(), enemy->getX(), enemy->getY()) <= attackRange &&
+                blockedEnemies.size() < blockLimit)
             {
-                if(std::ranges::find(blockedEnemies,enemy) == blockedEnemies.end())
-                {
-                    blockedEnemies.push_back(enemy);
-                    enemy->setBlocked(true);
-                }
+
+                blockedEnemies.push_back(enemy);
+                enemy->setBlocked(true);
+                enemy->setBlockedBy(self);
             }
         }
     }
-    if(lastAttackTimer>=attackCooldown&&!blockedEnemies.empty())
+    if (lastAttackTimer >= attackCooldown && !blockedEnemies.empty())
     {
-        Enemy* target = nullptr;
+        std::shared_ptr<Enemy> target = nullptr;
         int minHp = INT_MAX;
-        for(const auto& enemy : blockedEnemies)
+
+        for (auto &weakEnemy : blockedEnemies)
         {
-            if(!enemy||enemy->isDead())continue;
-            if(enemy->getHp() < minHp)
-            {
-                target = enemy;
-                minHp = enemy->getHp();
+            if (auto enemy = weakEnemy.lock())
+            { // 必须先 lock 才能访问数据
+                if (enemy->getHp() < minHp)
+                {
+                    target = enemy;
+                    minHp = enemy->getHp();
+                }
             }
         }
-        if(target)
+
+        if (target)
         {
-            attack(target);
+            attack(target.get());
             lastAttackTimer = 0.0f;
         }
     }

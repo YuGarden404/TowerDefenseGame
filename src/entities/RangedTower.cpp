@@ -7,52 +7,59 @@
 #include "../components/BurnAffix.h"
 
 RangedTower::RangedTower()
-:Tower(10,10,0.5f,0,0,10,10){}
+    : Tower(10, 10, 0.5f, 0, 0, 10, 10) {}
 
 RangedTower::RangedTower(const int attackPower, const float attackRange, const float attackCooldown, const float x, float y, int hp, int maxHp, float speed)
-: Tower(attackPower,attackRange,attackCooldown,x,y,hp,maxHp,speed){}
+    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, speed) {}
 
-void RangedTower::attack(Enemy* target)
+void RangedTower::attack(Enemy *target)
 {
-    if(!target||target->isDead()||isDead()||lastAttackTimer<attackCooldown)return;
-    if(euclideanDistance(getX(),getY(),target->getX(),target->getY())<=attackRange)
+    if (!target || target->isDead() || isDead() || lastAttackTimer < attackCooldown)
+        return;
+    if (euclideanDistance(getX(), getY(), target->getX(), target->getY()) > attackRange)
     {
-        std::cout << "远程塔攻击(" << target->getX() << "," << target->getY() << ")成功，造成" << attackPower << "点伤害" << std::endl;
-        target->takeDamage(attackPower);
+        return;
     }
-    for(auto &effect:onHitEffects)
+    target->takeDamage(attackPower);
+    for (auto &effect : onHitEffects)
     {
-        if(effect == "Slow")
+        if (effect == "Slow")
         {
-            target->addAffix(std::make_unique<SlowAffix>(0.5f,"Slow",0.5f));
-        }else if(effect == "Burn")
+            target->addAffix(std::make_unique<SlowAffix>(0.5f, "Slow", 0.5f));
+        }
+        else if (effect == "Burn")
         {
-            target->addAffix(std::make_unique<BurnAffix>(0.5f,"Burn",5));
+            target->addAffix(std::make_unique<BurnAffix>(0.5f, "Burn", 5));
         }
     }
 }
 
-void RangedTower::update(const float deltaTime, std::vector<Entity*>& entities)
+void RangedTower::update(const float deltaTime, std::vector<std::shared_ptr<Entity>> &entities)
 {
-    Tower::update(deltaTime,entities);
-    if(lastAttackTimer>=attackCooldown)
+    if (isDead())
+        return;
+    this->updateAffixes(deltaTime);
+    lastAttackTimer += deltaTime;
+    if (lastAttackTimer >= attackCooldown)
     {
-        Entity* target = nullptr;
+        std::shared_ptr<Enemy> target = nullptr;
         float minDistance = attackRange;
-        for(const auto& entity:entities)
+        for (const auto &entity : entities)
         {
-            if(!entity||entity->isDead())continue;
-            auto* enemy = dynamic_cast<Enemy*>(entity);
-            if(!enemy)continue;
-            if(const float distance = euclideanDistance(getX(),getY(),enemy->getX(),enemy->getY()); distance<=minDistance)
+            if (!entity || entity->isDead())
+                continue;
+            auto enemy = std::dynamic_pointer_cast<Enemy>(entity);
+            if (!enemy)
+                continue;
+            if (const float distance = euclideanDistance(getX(), getY(), enemy->getX(), enemy->getY()); distance <= minDistance)
             {
                 target = enemy;
                 minDistance = distance;
             }
         }
-        if(target)
+        if (target)
         {
-            attack(dynamic_cast<Enemy*>(target));
+            attack(target.get());
             lastAttackTimer = 0.0f;
         }
     }

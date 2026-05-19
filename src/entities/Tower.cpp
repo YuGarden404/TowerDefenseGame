@@ -9,10 +9,3 @@ Tower::Tower(const int attackPower, const float attackRange, const float attackC
 {
     onHitEffects.clear();
 }
-
-void Tower::update(const float deltaTime, std::vector<Entity*>& entities)
-{
-    if(isDead())return;
-    this->updateAffixes(deltaTime);
-    lastAttackTimer += deltaTime;
-}

@@ -3,127 +3,254 @@
 //
 
 #include "Map.h"
+#include <cmath>
 
 bool Map::isValidPos(const int x, const int y) const
 {
-    return x>=0&&x<width&&y>=0&&y<height;
+    return x >= 0 && x < width && y >= 0 && y < height;
 }
 
 std::string Map::TileTypeToString(const TileType type)
 {
     switch (type)
     {
-        case TileType::GROUND:return "GROUND";
-        case TileType::PATH:return "PATH";
-        case TileType::START:return "START";
-        case TileType::END:return "END";
-        default:return "ERROR";
+    case TileType::GROUND:
+        return "GROUND";
+    case TileType::PATH:
+        return "PATH";
+    case TileType::START:
+        return "START";
+    case TileType::END:
+        return "END";
+    default:
+        return "ERROR";
     }
 }
 
+bool Map::areAdjacent(const Point &a, const Point &b)
+{
+    return std::abs(a.x - b.x) + std::abs(a.y - b.y) == 1;
+}
+
+bool Map::hasDuplicatePoint(const std::vector<Point> &path)
+{
+    for (size_t i = 0; i < path.size(); ++i)
+    {
+        for (size_t j = i + 1; j < path.size(); ++j)
+        {
+            if (path[i] == path[j])
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 Map::Map(const int w, const int h)
 {
-    //默认是空地
-    if(w<0||h<0)
+    // 默认是空地
+    if (w < 0 || h < 0)
     {
-        std::cout << "地图构造参数有误：" << std::endl;
-        if(w<0)
-        {
-            std::cout << "width = " << w << std::endl;
-        }
-        if(h<0)
-        {
-            std::cout << "height = " << h << std::endl;
-        }
-        std::cout << "默认构造：width = 0,height = 0" << std::endl;
         width = 0, height = 0;
         grid.clear();
-        enemyPath.clear();
-    }else
-    {
-        width = w, height = h;
-        grid.resize(height,std::vector(width,TileType::GROUND));
-        enemyPath.clear();
+        enemyPaths.clear();
+        return;
     }
+    width = w, height = h;
+    grid.assign(height, std::vector(width, TileType::GROUND));
+    enemyPaths.clear();
 }
 
 TileType Map::getTileType(const int x, const int y) const
 {
-    if(isValidPos(x,y))
+    if (isValidPos(x, y))
     {
         return grid[y][x];
     }
-    std::cout << "获取地图(" << x << "," << y << ")信息有误，非法索引" << std::endl;
     return TileType::TILE_ERROR;
 }
 
 void Map::setTileType(const int x, const int y, const TileType type)
 {
-    if(isValidPos(x,y))
+    if (isValidPos(x, y))
     {
-        std::cout << "修改地图(" << x << "," << y << ")成功，由" << TileTypeToString(grid[y][x]) << "修改为" << TileTypeToString(type) << std::endl;
         grid[y][x] = type;
-    }else std::cout << "获取地图(" << x << "," << y << ")信息有误，非法索引" << std::endl;
+    }
 }
 
-void Map::addPathPoint(const int x, const int y)
+bool Map::addPath(const std::vector<Point> &path)
 {
-    if(isValidPos(x,y))
+    if (path.size() < 2)
     {
-        enemyPath.emplace_back(x,y);
-        std::cout << "添加路径(" << x << "," << y << ")成功" << std::endl;
-    }else std::cout << "添加路径(" << x << "," << y << ")信息有误，非法索引" << std::endl;
-}
-
-const std::vector<Point>& Map::getEnemyPath() const
-{
-    return enemyPath;
-}
-
-bool Map::loadFromFile(const std::string& filename)
-{
-    std::ifstream file(filename);
-    if(!file.is_open())
-    {
-        std::cout << "地图文件打开错误" << std::endl;
+        std::cout << "Add path failed: path must contain at least 2 points." << std::endl;
         return false;
     }
-    enemyPath.clear();
+
+    for (const auto &point : path)
+    {
+        if (!isValidPos(point.x, point.y))
+        {
+            std::cout << "Add path failed: point out of map." << std::endl;
+            return false;
+        }
+    }
+
+    if (hasDuplicatePoint(path))
+    {
+        std::cout << "Add path failed: path contains duplicate points." << std::endl;
+        return false;
+    }
+
+    for (size_t i = 1; i < path.size(); ++i)
+    {
+        if (!areAdjacent(path[i - 1], path[i]))
+        {
+            std::cout << "Add path failed: adjacent path points must be 4-neighbor cells." << std::endl;
+            return false;
+        }
+    }
+
+    enemyPaths.push_back(path);
+
+    for (const auto &point : path)
+    {
+        setTileType(point.x, point.y, TileType::PATH);
+    }
+
+    setTileType(path.front().x, path.front().y, TileType::START);
+    setTileType(path.back().x, path.back().y, TileType::END);
+
+    return true;
+}
+
+const std::vector<Point> &Map::getEnemyPath() const
+{
+    static const std::vector<Point> emptyPath;
+    if (enemyPaths.empty())
+    {
+        return emptyPath;
+    }
+    return enemyPaths.front();
+}
+
+const std::vector<Point> &Map::getEnemyPath(const size_t pathId) const
+{
+    static const std::vector<Point> emptyPath;
+    if (pathId >= enemyPaths.size())
+    {
+        return emptyPath;
+    }
+    return enemyPaths[pathId];
+}
+
+const std::vector<std::vector<Point>> &Map::getEnemyPaths() const
+{
+    return enemyPaths;
+}
+
+size_t Map::getPathCount() const
+{
+    return enemyPaths.size();
+}
+
+bool Map::isPathTile(const int x, const int y) const
+{
+    const TileType type = getTileType(x, y);
+    return type == TileType::PATH || type == TileType::START || type == TileType::END;
+}
+
+bool Map::isAdjacentToPath(const int x, const int y) const
+{
+    static constexpr int dx[4] = {1, -1, 0, 0};
+    static constexpr int dy[4] = {0, 0, 1, -1};
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (isPathTile(x + dx[i], y + dy[i]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Map::canPlaceMeleeTower(const int x, const int y) const
+{
+    return isPathTile(x, y);
+}
+
+bool Map::canPlaceRangedTower(const int x, const int y) const
+{
+    return getTileType(x, y) == TileType::GROUND && isAdjacentToPath(x, y);
+}
+
+bool Map::loadFromFile(const std::string &filename)
+{
+    std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        std::cout << "Map file open failed." << std::endl;
+        return false;
+    }
+
+    width = 0;
+    height = 0;
     grid.clear();
+    enemyPaths.clear();
 
     std::string line;
-    while(std::getline(file,line))
+    while (std::getline(file, line))
     {
-        if(line.empty()||line.starts_with("#"))continue;
-        if(line.starts_with("SIZE:"))
+        if (line.empty() || line.starts_with("#"))
+        {
+            continue;
+        }
+
+        if (line.starts_with("SIZE:"))
         {
             std::stringstream ss(line.substr(5));
             ss >> width >> height;
-            grid.resize(height, std::vector(width, TileType::GROUND));
-        }else if(line.starts_with("PATH:"))
+            if (width <= 0 || height <= 0)
+            {
+                std::cout << "Invalid map size." << std::endl;
+                return false;
+            }
+            grid.assign(height, std::vector<TileType>(width, TileType::GROUND));
+        }
+        else if (line.starts_with("PATH:"))
         {
+            if (grid.empty())
+            {
+                std::cout << "PATH appears before SIZE." << std::endl;
+                return false;
+            }
+
             std::stringstream ss(line.substr(5));
             std::string pointStr;
-            while(ss >> pointStr)
-            {
-                if(size_t pos = pointStr.find(','); pos!=std::string::npos)
-                {
-                    int x = std::stoi(pointStr.substr(0,pos));
-                    int y = std::stoi(pointStr.substr(pos+1));
+            std::vector<Point> path;
 
-                    setTileType(x,y,TileType::PATH);
-                    addPathPoint(x,y);
+            while (ss >> pointStr)
+            {
+                const size_t pos = pointStr.find(',');
+                if (pos == std::string::npos)
+                {
+                    std::cout << "Invalid point format." << std::endl;
+                    return false;
                 }
+
+                const int x = std::stoi(pointStr.substr(0, pos));
+                const int y = std::stoi(pointStr.substr(pos + 1));
+                path.emplace_back(x, y);
+            }
+
+            if (!addPath(path))
+            {
+                return false;
             }
         }
     }
-    if(!enemyPath.empty())
-    {
-        setTileType(enemyPath.front().x,enemyPath.front().y,TileType::START);
-        setTileType(enemyPath.back().x,enemyPath.back().y,TileType::END);
-    }
-    file.close();
-    std::cout << "地图加载成功" << std::endl;
-    return true;
+
+    return !enemyPaths.empty();
 }
