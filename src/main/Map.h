@@ -77,6 +77,15 @@ public:
 
     // 判断某个格子是否是石头
     bool isRockTile(int x, int y) const { return getTileType(x, y) == TileType::ROCK; }
+
+    // 将指定格子设置为草地。只有非路径格子可以被设置为草地。
+    bool setGrass(int x, int y);
+
+    // 移除石头，将石头格子恢复为草地。
+    bool removeRock(int x, int y);
+
+    // 验证地图是否可以用于游戏。
+    bool validate() const;
 };
 
 #endif // MAP_H

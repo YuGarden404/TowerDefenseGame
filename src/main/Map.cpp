@@ -293,7 +293,7 @@ bool Map::loadFromFile(const std::string &filename)
         }
     }
 
-    return !enemyPaths.empty();
+    return validate();
 }
 
 bool Map::saveToFile(const std::string &filename) const
@@ -361,5 +361,81 @@ bool Map::addRock(int x, int y)
     }
 
     grid[y][x] = TileType::ROCK;
+    return true;
+}
+
+bool Map::setGrass(int x, int y)
+{
+    if (!isValidPos(x, y))
+    {
+        return false;
+    }
+
+    if (isPathTile(x, y))
+    {
+        return false;
+    }
+
+    grid[y][x] = TileType::GRASS;
+    return true;
+}
+
+bool Map::removeRock(int x, int y)
+{
+    if (!isValidPos(x, y))
+    {
+        return false;
+    }
+
+    if (grid[y][x] != TileType::ROCK)
+    {
+        return false;
+    }
+
+    grid[y][x] = TileType::GRASS;
+    return true;
+}
+
+bool Map::validate() const
+{
+    if (width <= 0 || height <= 0 || grid.empty())
+    {
+        return false;
+    }
+
+    if (enemyPaths.empty())
+    {
+        return false;
+    }
+
+    for (const auto &path : enemyPaths)
+    {
+        if (path.size() < 2)
+        {
+            return false;
+        }
+
+        if (hasDuplicatePoint(path))
+        {
+            return false;
+        }
+
+        for (const auto &point : path)
+        {
+            if (!isValidPos(point.x, point.y))
+            {
+                return false;
+            }
+        }
+
+        for (size_t i = 1; i < path.size(); ++i)
+        {
+            if (!areAdjacent(path[i - 1], path[i]))
+            {
+                return false;
+            }
+        }
+    }
+
     return true;
 }

@@ -2,16 +2,69 @@
 #include <iostream>
 #include <memory>
 #include <thread>
-
+#include <fstream>
 #include "src/main/Game.h"
+
+void runInvalidMapTests()
+{
+    {
+        std::ofstream file("file/invalid_diagonal_map.txt");
+        file << "SIZE:5 5\n";
+        file << "ROAD:0,0 1,1\n";
+    }
+
+    {
+        std::ofstream file("file/invalid_duplicate_map.txt");
+        file << "SIZE:5 5\n";
+        file << "ROAD:0,0 1,0 1,0 2,0\n";
+    }
+
+    {
+        std::ofstream file("file/invalid_rock_map.txt");
+        file << "SIZE:5 5\n";
+        file << "ROCK:9,9\n";
+        file << "ROAD:0,0 1,0\n";
+    }
+
+    Map diagonalMap(1, 1);
+    Map duplicateMap(1, 1);
+    Map rockMap(1, 1);
+
+    std::cout << "Invalid diagonal map should fail: "
+              << !diagonalMap.loadFromFile("file/invalid_diagonal_map.txt")
+              << std::endl;
+
+    std::cout << "Invalid duplicate map should fail: "
+              << !duplicateMap.loadFromFile("file/invalid_duplicate_map.txt")
+              << std::endl;
+
+    std::cout << "Invalid rock map should fail: "
+              << !rockMap.loadFromFile("file/invalid_rock_map.txt")
+              << std::endl;
+}
 
 int main()
 {
+    runInvalidMapTests();
+    return 0;
     Game game(1, 1);
 
     if (!game.getMap().loadFromFile("file/map.txt"))
     {
         std::cout << "Map load failed." << std::endl;
+        return 1;
+    }
+
+    if (!game.getMap().saveToFile("file/exported_map.txt"))
+    {
+        std::cout << "Map export failed." << std::endl;
+        return 1;
+    }
+
+    Map exportedMap(1, 1);
+    if (!exportedMap.loadFromFile("file/exported_map.txt"))
+    {
+        std::cout << "Exported map reload failed." << std::endl;
         return 1;
     }
 
