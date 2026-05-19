@@ -52,6 +52,7 @@ std::unique_ptr<Enemy> EnemyFactory::createEnemy(
         reward);
 
     assignRandomAffixes(*enemy);
+    enemy->applyInnateAffixes();
     return enemy;
 }
 
@@ -76,6 +77,7 @@ void EnemyFactory::assignRandomAffixes(Enemy &enemy)
     {
         enemy.equipAffix(AffixId::Blink);
     }
+    enemy.applyInnateAffixes();
 }
 
 bool EnemyFactory::roll(const float chance)

@@ -15,7 +15,10 @@ Enemy::Enemy(Map &map, const size_t pathId, const float x, const float y,
       reachedEnd(false),
       attackPower(10),
       attackCooldown(1.0f),
-      attackTimer(0.0f)
+      attackTimer(0.0f),
+      innateAffixesApplied(false),
+      blinkCooldown(3.0f),
+      blinkTimer(0.0f)
 {
 }
 
@@ -35,6 +38,7 @@ void Enemy::update(const float deltaTime, std::vector<std::shared_ptr<Entity>> &
     }
 
     updateAffixes(deltaTime);
+    updateBlinkCooldown(deltaTime);
 
     if (isBlocked)
     {
@@ -91,4 +95,62 @@ void Enemy::setBlockedBy(std::shared_ptr<Entity> blocker)
 void Enemy::clearBlockedBy()
 {
     blockedBy.reset();
+}
+
+void Enemy::applyInnateAffixes()
+{
+    if (innateAffixesApplied)
+    {
+        return;
+    }
+    if (hasEquippedAffix(AffixId::Swift))
+    {
+        setSpeed(getSpeed() * 1.5f);
+    }
+    innateAffixesApplied = true;
+}
+
+void Enemy::updateBlinkCooldown(float deltaTime)
+{
+    if (blinkTimer > 0.0f)
+    {
+        blinkTimer -= deltaTime;
+    }
+}
+
+bool Enemy::canBlink() const
+{
+    return hasEquippedAffix(AffixId::Blink) && blinkTimer <= 0.0f && !isDead() && !reachedEnd;
+}
+
+void Enemy::triggerBlink()
+{
+    if (canBlink())
+    {
+        blinkTimer = blinkCooldown;
+        blinkForward();
+    }
+}
+
+void Enemy::blinkForward()
+{
+    const auto &path = map.getEnemyPath(pathId);
+    if (path.empty())
+    {
+        return;
+    }
+
+    if (pathIndex >= path.size())
+    {
+        return;
+    }
+
+    size_t newIndex = pathIndex + 2;
+    if (newIndex >= path.size())
+    {
+        newIndex = path.size() - 1;
+    }
+    pathIndex = newIndex;
+    x = static_cast<float>(path[pathIndex].x);
+    y = static_cast<float>(path[pathIndex].y);
 }

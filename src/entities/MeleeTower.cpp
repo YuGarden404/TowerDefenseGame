@@ -86,6 +86,11 @@ void MeleeTower::update(const float deltaTime, std::vector<std::shared_ptr<Entit
                 euclideanDistance(getX(), getY(), enemy->getX(), enemy->getY()) <= attackRange &&
                 blockedEnemies.size() < blockLimit)
             {
+                if (enemy->canBlink())
+                {
+                    enemy->triggerBlink();
+                    continue;
+                }
 
                 blockedEnemies.push_back(enemy);
                 enemy->setBlocked(true);

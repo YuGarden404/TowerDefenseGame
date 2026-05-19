@@ -21,6 +21,9 @@ class Enemy : public Entity
     float attackCooldown;
     float attackTimer;
     std::weak_ptr<Entity> blockedBy;
+    float blinkCooldown;
+    float blinkTimer;
+    bool innateAffixesApplied;
 
 public:
     // 公共成员函数
@@ -37,6 +40,19 @@ public:
     void setBlocked(bool blocked) { isBlocked = blocked; }
     void setBlockedBy(std::shared_ptr<Entity> blocker);
     void clearBlockedBy();
+    void applyInnateAffixes();
+
+    // 根据 deltaTime 更新闪现冷却
+    void updateBlinkCooldown(float deltaTime);
+
+    // 是否拥有 Blink 且当前可闪现
+    bool canBlink() const;
+
+    // 触发闪现，让敌人前进一段路径并进入冷却
+    void triggerBlink();
+
+    // 让敌人沿当前路径跳过若干路径点
+    void blinkForward();
 };
 
 #endif // ENEMY_H
