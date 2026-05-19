@@ -4,6 +4,9 @@
 
 #include "Map.h"
 #include <cmath>
+#include "../../third_party/nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 bool Map::isValidPos(const int x, const int y) const
 {
@@ -437,5 +440,140 @@ bool Map::validate() const
         }
     }
 
+    return true;
+}
+
+bool Map::loadFromJsonFile(const std::string &filename)
+{
+    std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        std::cout << "JSON map file open failed." << std::endl;
+        return false;
+    }
+
+    json data;
+    try
+    {
+        file >> data;
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "JSON parse failed: " << e.what() << std::endl;
+        return false;
+    }
+
+    if (!data.contains("width") || !data.contains("height") || !data.contains("roads"))
+    {
+        std::cout << "JSON map missing required fields." << std::endl;
+        return false;
+    }
+
+    width = data["width"].get<int>();
+    height = data["height"].get<int>();
+
+    if (width <= 0 || height <= 0)
+    {
+        std::cout << "Invalid JSON map size." << std::endl;
+        return false;
+    }
+
+    grid.assign(height, std::vector<TileType>(width, TileType::GRASS));
+    enemyPaths.clear();
+
+    if (data.contains("rocks"))
+    {
+        for (const auto &rock : data["rocks"])
+        {
+            if (!rock.is_array() || rock.size() != 2)
+            {
+                std::cout << "Invalid rock format in JSON." << std::endl;
+                return false;
+            }
+
+            int x = rock[0].get<int>();
+            int y = rock[1].get<int>();
+
+            if (!isValidPos(x, y))
+            {
+                std::cout << "Invalid rock position in JSON." << std::endl;
+                return false;
+            }
+
+            addRock(x, y);
+        }
+    }
+
+    for (const auto &road : data["roads"])
+    {
+        if (!road.is_array())
+        {
+            std::cout << "Invalid road format in JSON." << std::endl;
+            return false;
+        }
+
+        std::vector<Point> path;
+
+        for (const auto &point : road)
+        {
+            if (!point.is_array() || point.size() != 2)
+            {
+                std::cout << "Invalid road point format in JSON." << std::endl;
+                return false;
+            }
+
+            int x = point[0].get<int>();
+            int y = point[1].get<int>();
+            path.emplace_back(x, y);
+        }
+
+        if (!addPath(path))
+        {
+            return false;
+        }
+    }
+
+    return validate();
+}
+
+bool Map::saveToJsonFile(const std::string &filename) const
+{
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cout << "Failed to open JSON map file for saving." << std::endl;
+        return false;
+    }
+
+    json data;
+    data["width"] = width;
+    data["height"] = height;
+    data["rocks"] = json::array();
+    data["roads"] = json::array();
+
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            if (grid[y][x] == TileType::ROCK)
+            {
+                data["rocks"].push_back({x, y});
+            }
+        }
+    }
+
+    for (const auto &path : enemyPaths)
+    {
+        json road = json::array();
+
+        for (const auto &point : path)
+        {
+            road.push_back({point.x, point.y});
+        }
+
+        data["roads"].push_back(road);
+    }
+
+    file << data.dump(4) << std::endl;
     return true;
 }

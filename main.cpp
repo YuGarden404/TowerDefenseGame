@@ -45,26 +45,26 @@ void runInvalidMapTests()
 
 int main()
 {
-    runInvalidMapTests();
-    return 0;
+    // runInvalidMapTests();
+    // return 0;
     Game game(1, 1);
 
-    if (!game.getMap().loadFromFile("file/map.txt"))
+    if (!game.getMap().loadFromJsonFile("file/map.json"))
     {
         std::cout << "Map load failed." << std::endl;
         return 1;
     }
 
-    if (!game.getMap().saveToFile("file/exported_map.txt"))
+    if (!game.getMap().saveToJsonFile("file/exported_map.json"))
     {
-        std::cout << "Map export failed." << std::endl;
+        std::cout << "Json map export failed." << std::endl;
         return 1;
     }
 
     Map exportedMap(1, 1);
-    if (!exportedMap.loadFromFile("file/exported_map.txt"))
+    if (!exportedMap.loadFromJsonFile("file/exported_map.json"))
     {
-        std::cout << "Exported map reload failed." << std::endl;
+        std::cout << "Exported json map reload failed." << std::endl;
         return 1;
     }
 

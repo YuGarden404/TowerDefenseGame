@@ -86,6 +86,9 @@ public:
 
     // 验证地图是否可以用于游戏。
     bool validate() const;
+
+    bool loadFromJsonFile(const std::string &filename);
+    bool saveToJsonFile(const std::string &filename) const;
 };
 
 #endif // MAP_H
