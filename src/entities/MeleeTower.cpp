@@ -27,20 +27,14 @@ MeleeTower::~MeleeTower()
 
 void MeleeTower::attack(Enemy *target)
 {
-    if (!target || target->isDead())
+    if (!target || target->isDead() || isDead())
         return;
-    target->takeDamage(attackPower);
-    for (auto &effect : onHitEffects)
+    int finalAttackPower = attackPower;
+    if (hasEquippedAffix(AffixId::Berserk))
     {
-        if (effect == "Slow")
-        {
-            target->addAffix(std::make_unique<SlowAffix>(0.5f, "Slow", 0.5f));
-        }
-        else if (effect == "Burn")
-        {
-            target->addAffix(std::make_unique<BurnAffix>(0.5f, "Burn", 5));
-        }
+        finalAttackPower *= 2;
     }
+    target->takeDamage(finalAttackPower);
 }
 
 void MeleeTower::update(const float deltaTime, std::vector<std::shared_ptr<Entity>> &entities)
@@ -99,7 +93,13 @@ void MeleeTower::update(const float deltaTime, std::vector<std::shared_ptr<Entit
             }
         }
     }
-    if (lastAttackTimer >= attackCooldown && !blockedEnemies.empty())
+    float finalCooldown = attackCooldown;
+    if (hasEquippedAffix(AffixId::Berserk))
+    {
+        finalCooldown *= 0.5f;
+    }
+
+    if (lastAttackTimer >= finalCooldown && !blockedEnemies.empty())
     {
         std::shared_ptr<Enemy> target = nullptr;
         int minHp = INT_MAX;

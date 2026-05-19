@@ -11,7 +11,7 @@
 Game::Game(const int w, const int h)
     : map(w, h),
       enemyFactory(),
-      money(100),
+      money(1000),
       playerHp(10),
       totalEnemiesToSpawn(20),
       spawnedEnemyCount(0),
@@ -176,30 +176,6 @@ void Game::render() const
     }
 }
 
-bool Game::purchaseUpgrade(const int x, const int y, std::string effectName)
-{
-    for (auto &entity : allEntities)
-    {
-        if (Entity::euclideanDistance(entity->getX(), entity->getY(), x, y) < 0.5f)
-        {
-            if (auto *tower = dynamic_cast<Tower *>(entity.get()))
-            {
-                if (!std::ranges::any_of(tower->getOnHitEffects(), [&effectName](const std::string &effect)
-                                         { return effect == effectName; }))
-                {
-                    if (money >= 10)
-                    {
-                        money -= 10;
-                        tower->getOnHitEffects().emplace_back(effectName);
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    return false;
-}
-
 bool Game::placeTower(std::unique_ptr<Tower> tower)
 {
     if (!tower)
@@ -300,19 +276,16 @@ bool Game::sellAffix(int x, int y, AffixId affixId)
     auto entity = findEntityAt(x, y);
     if (!entity)
     {
-        std::cout << "Failed to sell affix: No entity found at the specified position" << std::endl;
         return false;
     }
 
     if (!canPurchaseAffixFor(*entity, affixId))
     {
-        std::cout << "Failed to sell affix: This affix cannot be sold through the shop" << std::endl;
         return false;
     }
 
     if (!entity->hasEquippedAffix(affixId))
     {
-        std::cout << "Failed to sell affix: The entity does not have this affix equipped" << std::endl;
         return false;
     }
 
@@ -322,7 +295,6 @@ bool Game::sellAffix(int x, int y, AffixId affixId)
         return true;
     }
 
-    std::cout << "Failed to sell affix: Unknown error occurred" << std::endl;
     return false;
 }
 
@@ -380,4 +352,37 @@ void Game::setTotalEnemiesToSpawn(const int total)
     {
         totalEnemiesToSpawn = total;
     }
+}
+
+bool Game::purchaseAffix(int x, int y, AffixId affixId)
+{
+    auto entity = findEntityAt(x, y);
+    if (!entity)
+    {
+        return false;
+    }
+
+    if (!canPurchaseAffixFor(*entity, affixId))
+    {
+        return false;
+    }
+
+    if (entity->hasEquippedAffix(affixId))
+    {
+        return false;
+    }
+
+    int cost = getAffixBuyPrice(affixId);
+    if (!spendMoney(cost))
+    {
+        return false;
+    }
+
+    if (entity->equipAffix(affixId))
+    {
+        return true;
+    }
+    addMoney(cost);
+
+    return false;
 }

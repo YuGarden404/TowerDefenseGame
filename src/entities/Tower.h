@@ -12,11 +12,10 @@ class Tower : public Entity
 {
 protected:
     // 成员变量
-    int attackPower;                       // 攻击力
-    float attackRange;                     // 攻击范围
-    float attackCooldown;                  // 攻击冷却时间（秒）
-    float lastAttackTimer;                 // 距离上次攻击已过去的时间
-    std::vector<std::string> onHitEffects; // 词缀库
+    int attackPower;       // 攻击力
+    float attackRange;     // 攻击范围
+    float attackCooldown;  // 攻击冷却时间（秒）
+    float lastAttackTimer; // 距离上次攻击已过去的时间
 public:
     // 公共成员函数
     // 含参构造函数
@@ -30,7 +29,6 @@ public:
     [[nodiscard]] float getAttackRange() const { return attackRange; }
     [[nodiscard]] float getAttackCooldown() const { return attackCooldown; }
     [[nodiscard]] float getLastAttackTimer() const { return lastAttackTimer; }
-    [[nodiscard]] std::vector<std::string> &getOnHitEffects() { return onHitEffects; }
 };
 
 #endif // TOWER_H

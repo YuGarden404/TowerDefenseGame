@@ -21,16 +21,15 @@ void RangedTower::attack(Enemy *target)
         return;
     }
     target->takeDamage(attackPower);
-    for (auto &effect : onHitEffects)
+
+    if (hasEquippedAffix(AffixId::Slow))
     {
-        if (effect == "Slow")
-        {
-            target->addAffix(std::make_unique<SlowAffix>(0.5f, "Slow", 0.5f));
-        }
-        else if (effect == "Burn")
-        {
-            target->addAffix(std::make_unique<BurnAffix>(0.5f, "Burn", 5));
-        }
+        target->addAffix(std::make_unique<SlowAffix>(1.5f, "Slow", 0.5f));
+    }
+
+    if (hasEquippedAffix(AffixId::Burn))
+    {
+        target->addAffix(std::make_unique<BurnAffix>(3.0f, "Burn", 5));
     }
 }
 

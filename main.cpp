@@ -17,7 +17,6 @@ int main()
 
     game.setTotalEnemiesToSpawn(5);
 
-    // 近战塔：必须放在路径上。当前示例 map 第一条路径经过 (5,5)。
     game.placeTower(std::make_unique<MeleeTower>(
         5, 5,
         100, 100,
@@ -27,14 +26,17 @@ int main()
         0.0f,
         2));
 
-    // 远程塔：必须放在路径外，且与路径上下左右相邻。
-    // 如果路径在 y=5，则 (5,4) 通常是合法位置。
     game.placeTower(std::make_unique<RangedTower>(
         8,
         4.0f,
         0.8f,
         5, 4,
         100, 100));
+
+    bool flag[3] = {false, false, false};
+    flag[0] = game.purchaseAffix(5, 4, AffixId::Burn);
+    flag[1] = game.purchaseAffix(5, 4, AffixId::Slow);
+    flag[2] = game.purchaseAffix(5, 5, AffixId::Berserk);
 
     int frameCount = 0;
 
@@ -62,6 +64,9 @@ int main()
     {
         std::cout << "Defeat!" << std::endl;
     }
+    std::cout << "Buy Burn: " << flag[0] << std::endl;
+    std::cout << "Buy Slow: " << flag[1] << std::endl;
+    std::cout << "Buy Berserk: " << flag[2] << std::endl;
 
     return 0;
 }

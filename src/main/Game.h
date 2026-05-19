@@ -54,8 +54,6 @@ public:
     void addEntity(std::unique_ptr<Entity> entity);
     // 绘制地图
     void render() const;
-    // 升级塔
-    bool purchaseUpgrade(int x, int y, std::string effectName);
     // 放置塔
     bool placeTower(std::unique_ptr<Tower> tower);
 
