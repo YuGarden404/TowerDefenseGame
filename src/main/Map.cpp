@@ -187,7 +187,8 @@ bool Map::isAdjacentToPath(const int x, const int y) const
 
 bool Map::canPlaceMeleeTower(const int x, const int y) const
 {
-    return isPathTile(x, y);
+    // return isPathTile(x, y);
+    return getTileType(x, y) == TileType::ROAD;
 }
 
 bool Map::canPlaceRangedTower(const int x, const int y) const

@@ -7,8 +7,16 @@
 #include <algorithm>
 #include <climits>
 
-MeleeTower::MeleeTower(const float x, const float y, const int hp, const int maxHp, const int attackPower, const float attackCooldown, const float attackRange, float speed, const int blockLimit)
-    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, speed), blockLimit(blockLimit)
+MeleeTower::MeleeTower(const float x, const float y)
+    : MeleeTower(x, y, 100, 100, 10, 1.0f, 1.0f, 0.0f, 1)
+{
+}
+
+MeleeTower::MeleeTower(const float x, const float y, const int hp, const int maxHp,
+                       const int attackPower, const float attackCooldown,
+                       const float attackRange, const float speed, const int blockLimit)
+    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, COST, speed),
+      blockLimit(blockLimit)
 {
     blockedEnemies.clear();
 }

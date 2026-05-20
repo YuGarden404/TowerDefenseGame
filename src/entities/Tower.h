@@ -16,10 +16,12 @@ protected:
     float attackRange;     // 攻击范围
     float attackCooldown;  // 攻击冷却时间（秒）
     float lastAttackTimer; // 距离上次攻击已过去的时间
+    int cost;              // 建造成本
 public:
     // 公共成员函数
     // 含参构造函数
-    Tower(int attackPower, float attackRange, float attackCooldown, float x, float y, int hp, int maxHp, float speed = 0.0);
+    Tower(int attackPower, float attackRange, float attackCooldown,
+          float x, float y, int hp, int maxHp, int cost, float speed = 0.0f);
     // 纯虚函数 近战塔和远程塔的攻击表现不同，留给子类实现
     virtual void attack(Enemy *target) = 0;
     // 纯虚函数 每帧都要执行逻辑
@@ -29,6 +31,7 @@ public:
     [[nodiscard]] float getAttackRange() const { return attackRange; }
     [[nodiscard]] float getAttackCooldown() const { return attackCooldown; }
     [[nodiscard]] float getLastAttackTimer() const { return lastAttackTimer; }
+    [[nodiscard]] int getCost() const { return cost; }
 };
 
 #endif // TOWER_H

@@ -129,9 +129,13 @@ void Game::spawnEnemy()
 bool Game::placeTower(std::unique_ptr<Tower> tower)
 {
     if (!tower)
+    {
         return false;
+    }
+
     int ix = static_cast<int>(tower->getX() + 0.5f);
     int iy = static_cast<int>(tower->getY() + 0.5f);
+
     bool canPlace = false;
     if (dynamic_cast<MeleeTower *>(tower.get()))
     {
@@ -141,21 +145,26 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
     {
         canPlace = map.canPlaceRangedTower(ix, iy);
     }
-    if (canPlace)
+
+    if (!canPlace)
     {
-        for (const auto &e : allEntities)
-        {
-            if (dynamic_cast<Tower *>(e.get()) && static_cast<int>(e->getX() + 0.5f) == ix && static_cast<int>(e->getY() + 0.5f) == iy)
-            {
-                std::cout << "Placement failed: A building already exists at this position" << std::endl;
-                return false;
-            }
-        }
-        addEntity(std::move(tower));
-        return true;
+        std::cout << "放置失败：无法在该地块上放置防御塔" << std::endl;
+        return false;
     }
-    std::cout << "Placement failed: The placed object does not match the terrain type" << std::endl;
-    return false;
+
+    for (const auto &e : allEntities)
+    {
+        if (dynamic_cast<Tower *>(e.get()) &&
+            static_cast<int>(e->getX() + 0.5f) == ix &&
+            static_cast<int>(e->getY() + 0.5f) == iy)
+        {
+            std::cout << "放置失败：该位置已有防御塔" << std::endl;
+            return false;
+        }
+    }
+
+    addEntity(std::move(tower));
+    return true;
 }
 
 void Game::addEntity(std::unique_ptr<Entity> entity)
@@ -379,28 +388,42 @@ TileType Game::getTileAt(int x, int y) const
 
 bool Game::placeMeleeTowerAt(int x, int y)
 {
-    return placeTower(std::make_unique<MeleeTower>(
-        static_cast<float>(x),
-        static_cast<float>(y),
-        100,
-        100,
-        10,
-        1.0f,
-        0.5f,
-        0.0f,
-        2));
+    auto tower = std::make_unique<MeleeTower>(x, y);
+    const int cost = tower->getCost();
+
+    if (!canAfford(cost))
+    {
+        std::cout << "Placement failed: not enough gold." << std::endl;
+        return false;
+    }
+
+    if (!placeTower(std::move(tower)))
+    {
+        return false;
+    }
+
+    money -= cost;
+    return true;
 }
 
 bool Game::placeRangedTowerAt(int x, int y)
 {
-    return placeTower(std::make_unique<RangedTower>(
-        8,
-        4.0f,
-        0.8f,
-        static_cast<float>(x),
-        static_cast<float>(y),
-        100,
-        100));
+    auto tower = std::make_unique<RangedTower>(x, y);
+    const int cost = tower->getCost();
+
+    if (!canAfford(cost))
+    {
+        std::cout << "Placement failed: not enough gold." << std::endl;
+        return false;
+    }
+
+    if (!placeTower(std::move(tower)))
+    {
+        return false;
+    }
+
+    money -= cost;
+    return true;
 }
 
 bool Game::buyAffixAt(int x, int y, AffixId affixId)
@@ -434,4 +457,38 @@ void Game::reset()
     gameOver = false;
     victory = false;
     paused = false;
+}
+
+bool Game::sellTower(int x, int y)
+{
+    auto entity = findEntityAt(x, y);
+    if (!entity)
+    {
+        std::cout << "Sell tower failed: no entity at selected cell." << std::endl;
+        return false;
+    }
+
+    auto *tower = dynamic_cast<Tower *>(entity.get());
+    if (!tower)
+    {
+        std::cout << "Sell tower failed: selected entity is not a tower." << std::endl;
+        return false;
+    }
+
+    const int sellPrice = tower->getCost() * 70 / 100;
+
+    auto it = std::find(allEntities.begin(), allEntities.end(), entity);
+    if (it == allEntities.end())
+    {
+        return false;
+    }
+
+    allEntities.erase(it);
+    money += sellPrice;
+    return true;
+}
+
+bool Game::sellTowerAt(int x, int y)
+{
+    return sellTower(x, y);
 }

@@ -16,9 +16,11 @@ class MeleeTower : public Tower
     int blockLimit;                                   // 最大阻挡人数
     std::vector<std::weak_ptr<Enemy>> blockedEnemies; // 当前正在被此塔阻挡的敌人列表
 public:
-    // 成员函数
-    // 构造函数
-    MeleeTower(float x, float y, int hp, int maxHp, int attackPower, float attackCooldown, float attackRange, float speed, int blockLimit);
+    static constexpr int COST = 100;
+
+    MeleeTower(float x, float y);
+    MeleeTower(float x, float y, int hp, int maxHp, int attackPower,
+               float attackCooldown, float attackRange, float speed, int blockLimit);
     // 实现具体的近战伤害逻辑
     void attack(Enemy *target) override;
     // 实现具体的近战塔更新逻辑

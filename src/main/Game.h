@@ -49,6 +49,8 @@ class Game
     // 放置塔
     bool placeTower(std::unique_ptr<Tower> tower);
 
+    bool sellTower(int x, int y);
+
 public:
     // 公共成员函数
     // 构造函数
@@ -107,6 +109,8 @@ public:
 
     // 重置本局，保留地图
     void reset();
+
+    bool sellTowerAt(int x, int y);
 };
 
 #endif // GAME_H

@@ -6,12 +6,17 @@
 #include "../components/SlowAffix.h"
 #include "../components/BurnAffix.h"
 
-RangedTower::RangedTower()
-    : Tower(10, 10, 0.5f, 0, 0, 10, 10) {}
+RangedTower::RangedTower(const float x, const float y)
+    : RangedTower(8, 3.0f, 1.0f, x, y, 80, 80, 0.0f)
+{
+}
 
-RangedTower::RangedTower(const int attackPower, const float attackRange, const float attackCooldown, const float x, float y, int hp, int maxHp, float speed)
-    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, speed) {}
-
+RangedTower::RangedTower(const int attackPower, const float attackRange,
+                         const float attackCooldown, const float x, const float y,
+                         const int hp, const int maxHp, const float speed)
+    : Tower(attackPower, attackRange, attackCooldown, x, y, hp, maxHp, COST, speed)
+{
+}
 void RangedTower::attack(Enemy *target)
 {
     if (!target || target->isDead() || isDead() || lastAttackTimer < attackCooldown)
