@@ -5,7 +5,9 @@
 #include <fstream>
 #include "src/main/Game.h"
 
-void runInvalidMapTests()
+#include "src/render/ConsoleRenderer.h"
+
+int runInvalidMapTests()
 {
     {
         std::ofstream file("file/invalid_diagonal_map.txt");
@@ -41,12 +43,14 @@ void runInvalidMapTests()
     std::cout << "Invalid rock map should fail: "
               << !rockMap.loadFromFile("file/invalid_rock_map.txt")
               << std::endl;
+
+    return 0;
 }
 
-int main()
+int ConsoleRendererTest()
 {
-    // runInvalidMapTests();
-    // return 0;
+    ConsoleRenderer renderer;
+
     Game game(1, 1);
 
     if (!game.getMap().loadFromJsonFile("file/map.json"))
@@ -108,13 +112,13 @@ int main()
         }
 
         game.update(0.1f);
-        game.render();
+        renderer.render(game);
 
         frameCount++;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    game.render();
+    renderer.render(game);
 
     if (game.isVictory())
     {
@@ -124,7 +128,6 @@ int main()
     {
         std::cout << "Defeat!" << std::endl;
     }
-
     std::cout << "==================================" << std::endl;
 
     std::cout << "Buy Burn: " << flag[0] << std::endl;
@@ -142,6 +145,12 @@ int main()
 
     std::cout << "Sell Slow: " << flag[7] << std::endl;
     std::cout << "Sell Slow again: " << flag[8] << std::endl;
+    return 0;
+}
 
+int main()
+{
+    // runInvalidMapTests();
+    ConsoleRendererTest();
     return 0;
 }
