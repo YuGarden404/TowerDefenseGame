@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.29)
 project(TowerDefense)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
 
 add_executable(TowerDefense main.cpp
         src/entities/Enemy.cpp
@@ -32,4 +35,11 @@ add_executable(TowerDefense main.cpp
         src/render/ConsoleRenderer.h
         src/render/ConsoleRenderer.cpp
         src/view/GameView.h
+        src/qt/MainWindow.cpp
+        src/qt/MainWindow.h
+        src/qt/GameWidget.cpp
+        src/qt/GameWidget.h
         )
+
+        
+target_link_libraries(TowerDefense PRIVATE Qt6::Widgets)

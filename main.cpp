@@ -1,143 +1,21 @@
-#include <chrono>
-#include <iostream>
-#include <memory>
-#include <thread>
-#include <fstream>
-#include "src/main/Game.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
-#include "src/render/ConsoleRenderer.h"
+#include <QApplication>
+#include "src/qt/MainWindow.h"
 
-int runInvalidMapTests()
+int main(int argc, char *argv[])
 {
-    {
-        std::ofstream file("file/invalid_diagonal_map.txt");
-        file << "SIZE:5 5\n";
-        file << "ROAD:0,0 1,1\n";
-    }
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
 
-    {
-        std::ofstream file("file/invalid_duplicate_map.txt");
-        file << "SIZE:5 5\n";
-        file << "ROAD:0,0 1,0 1,0 2,0\n";
-    }
+    QApplication app(argc, argv);
 
-    {
-        std::ofstream file("file/invalid_rock_map.txt");
-        file << "SIZE:5 5\n";
-        file << "ROCK:9,9\n";
-        file << "ROAD:0,0 1,0\n";
-    }
+    MainWindow window;
+    window.show();
 
-    Map diagonalMap(1, 1);
-    Map duplicateMap(1, 1);
-    Map rockMap(1, 1);
-
-    std::cout << "Invalid diagonal map should fail: "
-              << !diagonalMap.loadFromFile("file/invalid_diagonal_map.txt")
-              << std::endl;
-
-    std::cout << "Invalid duplicate map should fail: "
-              << !duplicateMap.loadFromFile("file/invalid_duplicate_map.txt")
-              << std::endl;
-
-    std::cout << "Invalid rock map should fail: "
-              << !rockMap.loadFromFile("file/invalid_rock_map.txt")
-              << std::endl;
-
-    return 0;
-}
-
-int ConsoleRendererTest()
-{
-    ConsoleRenderer renderer;
-
-    Game game(1, 1);
-
-    if (!game.getMap().loadFromJsonFile("file/map.json"))
-    {
-        std::cout << "Map load failed." << std::endl;
-        return 1;
-    }
-
-    if (!game.getMap().saveToJsonFile("file/exported_map.json"))
-    {
-        std::cout << "Json map export failed." << std::endl;
-        return 1;
-    }
-
-    Map exportedMap(1, 1);
-    if (!exportedMap.loadFromJsonFile("file/exported_map.json"))
-    {
-        std::cout << "Exported json map reload failed." << std::endl;
-        return 1;
-    }
-
-    game.setTotalEnemiesToSpawn(5);
-
-    game.placeMeleeTowerAt(5, 5);
-    game.placeRangedTowerAt(5, 4);
-
-    bool flag[9] = {false, false, false, false, false, false, false, false, false};
-
-    flag[0] = game.buyAffixAt(5, 4, AffixId::Burn);
-    flag[1] = game.buyAffixAt(5, 4, AffixId::Burn);
-    flag[2] = game.buyAffixAt(5, 4, AffixId::Slow);
-    flag[3] = game.buyAffixAt(5, 5, AffixId::Berserk);
-    flag[4] = game.buyAffixAt(5, 5, AffixId::Burn);
-    flag[5] = game.buyAffixAt(5, 4, AffixId::Berserk);
-    flag[6] = game.buyAffixAt(5, 4, AffixId::Blink);
-    flag[7] = game.sellAffixAt(5, 4, AffixId::Slow);
-    flag[8] = game.sellAffixAt(5, 4, AffixId::Slow);
-
-    int frameCount = 0;
-
-    while (!game.isGameOver())
-    {
-        if (frameCount % 10 == 0)
-        {
-            game.spawnEnemy();
-        }
-
-        game.update(0.1f);
-        renderer.render(game);
-
-        frameCount++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-    renderer.render(game);
-
-    if (game.isVictory())
-    {
-        std::cout << "Victory!" << std::endl;
-    }
-    else
-    {
-        std::cout << "Defeat!" << std::endl;
-    }
-    std::cout << "==================================" << std::endl;
-
-    std::cout << "Buy Burn: " << flag[0] << std::endl;
-    std::cout << "Buy Burn again: " << flag[1] << std::endl;
-    std::cout << "Buy Slow: " << flag[2] << std::endl;
-    std::cout << "Buy Berserk: " << flag[3] << std::endl;
-
-    std::cout << "==================================" << std::endl;
-
-    std::cout << "Wrong Burn on melee: " << flag[4] << std::endl;
-    std::cout << "Wrong Berserk on ranged: " << flag[5] << std::endl;
-    std::cout << "Wrong Blink on tower: " << flag[6] << std::endl;
-
-    std::cout << "==================================" << std::endl;
-
-    std::cout << "Sell Slow: " << flag[7] << std::endl;
-    std::cout << "Sell Slow again: " << flag[8] << std::endl;
-    return 0;
-}
-
-int main()
-{
-    // runInvalidMapTests();
-    ConsoleRendererTest();
-    return 0;
+    return app.exec();
 }
