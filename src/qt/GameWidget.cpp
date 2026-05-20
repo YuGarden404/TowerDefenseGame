@@ -3,12 +3,31 @@
 #include <QBrush>
 #include <QColor>
 #include <QFont>
+#include <QMouseEvent>
 #include <QPen>
 
 GameWidget::GameWidget(Game &game, QWidget *parent)
     : QWidget(parent), game(game)
 {
     setMinimumSize(820, 480);
+}
+
+void GameWidget::setSelectedCell(int x, int y)
+{
+    const Map &map = game.getMap();
+
+    if (x < 0 || y < 0 || x >= map.getWidth() || y >= map.getHeight())
+    {
+        selectedX = -1;
+        selectedY = -1;
+    }
+    else
+    {
+        selectedX = x;
+        selectedY = y;
+    }
+
+    update();
 }
 
 void GameWidget::paintEvent(QPaintEvent *event)
@@ -22,7 +41,32 @@ void GameWidget::paintEvent(QPaintEvent *event)
 
     drawHud(painter);
     drawMap(painter);
+    drawSelection(painter);
     drawEntities(painter);
+}
+
+void GameWidget::mousePressEvent(QMouseEvent *event)
+{
+    if (!isInsideMapPixel(event->position().x(), event->position().y()))
+    {
+        return;
+    }
+
+    const int x = static_cast<int>((event->position().x() - mapOffsetX) / tileSize);
+    const int y = static_cast<int>((event->position().y() - mapOffsetY) / tileSize);
+
+    setSelectedCell(x, y);
+    emit cellClicked(x, y);
+}
+
+bool GameWidget::isInsideMapPixel(int pixelX, int pixelY) const
+{
+    const Map &map = game.getMap();
+
+    return pixelX >= mapOffsetX &&
+           pixelY >= mapOffsetY &&
+           pixelX < mapOffsetX + map.getWidth() * tileSize &&
+           pixelY < mapOffsetY + map.getHeight() * tileSize;
 }
 
 void GameWidget::drawHud(QPainter &painter)
@@ -47,8 +91,6 @@ void GameWidget::drawHud(QPainter &painter)
 void GameWidget::drawMap(QPainter &painter)
 {
     const Map &map = game.getMap();
-    const int offsetX = 20;
-    const int offsetY = 50;
 
     for (int y = 0; y < map.getHeight(); ++y)
     {
@@ -78,7 +120,7 @@ void GameWidget::drawMap(QPainter &painter)
                 break;
             }
 
-            QRect cell(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
+            QRect cell(mapOffsetX + x * tileSize, mapOffsetY + y * tileSize, tileSize, tileSize);
 
             painter.fillRect(cell, color);
             painter.setPen(QColor(220, 225, 230));
@@ -87,15 +129,33 @@ void GameWidget::drawMap(QPainter &painter)
     }
 }
 
+void GameWidget::drawSelection(QPainter &painter)
+{
+    if (selectedX < 0 || selectedY < 0)
+    {
+        return;
+    }
+
+    QRect selectedCell(
+        mapOffsetX + selectedX * tileSize,
+        mapOffsetY + selectedY * tileSize,
+        tileSize,
+        tileSize);
+
+    QPen pen(QColor(255, 220, 70));
+    pen.setWidth(4);
+
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(pen);
+    painter.drawRect(selectedCell.adjusted(2, 2, -2, -2));
+}
+
 void GameWidget::drawEntities(QPainter &painter)
 {
-    const int offsetX = 20;
-    const int offsetY = 50;
-
     for (const EntityView &entity : game.getEntityViews())
     {
-        const int centerX = offsetX + static_cast<int>(entity.x * tileSize) + tileSize / 2;
-        const int centerY = offsetY + static_cast<int>(entity.y * tileSize) + tileSize / 2;
+        const int centerX = mapOffsetX + static_cast<int>(entity.x * tileSize) + tileSize / 2;
+        const int centerY = mapOffsetY + static_cast<int>(entity.y * tileSize) + tileSize / 2;
 
         QColor color;
         QString label;

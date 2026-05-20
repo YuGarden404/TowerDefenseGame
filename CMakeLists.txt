@@ -3,6 +3,7 @@ project(TowerDefense)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 
@@ -41,5 +42,5 @@ add_executable(TowerDefense main.cpp
         src/qt/GameWidget.h
         )
 
-        
+
 target_link_libraries(TowerDefense PRIVATE Qt6::Widgets)
