@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "CMake",
+            "compileCommands": "${workspaceFolder}/cmake-build-debug/compile_commands.json",
+            "intelliSenseMode": "windows-gcc-x64",
+            "cppStandard": "c++20"
+        }
+    ],
+    "version": 4
+}
