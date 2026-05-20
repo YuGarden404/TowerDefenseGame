@@ -14,6 +14,7 @@
 #include <memory>
 #include <thread>
 #include "EnemyFactory.h"
+#include "../view/GameView.h"
 
 class Game
 {
@@ -51,6 +52,14 @@ public:
     [[nodiscard]] bool isVictory() const { return victory; }
     [[nodiscard]] int getSpawnedEnemyCount() const { return spawnedEnemyCount; }
     [[nodiscard]] int getTotalEnemiesToSpawn() const { return totalEnemiesToSpawn; }
+    // 返回所有活着实体的只读视图
+    [[nodiscard]] std::vector<EntityView> getEntityViews() const;
+
+    // 返回指定地图格子上的实体视图，没有实体则 kind 为 None
+    [[nodiscard]] EntityView getEntityViewAt(int x, int y) const;
+
+    // 返回指定地图格子的地形类型
+    [[nodiscard]] TileType getTileAt(int x, int y) const;
 
     void setTotalEnemiesToSpawn(int total);
     bool allEnemiesCleared() const;
@@ -60,8 +69,6 @@ public:
     void spawnEnemy();
     // 向游戏中添加单位
     void addEntity(std::unique_ptr<Entity> entity);
-    // 绘制地图
-    void render() const;
     // 放置塔
     bool placeTower(std::unique_ptr<Tower> tower);
 

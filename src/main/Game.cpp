@@ -8,6 +8,40 @@
 #include "Game.h"
 #include <algorithm>
 
+namespace
+{
+    EntityView makeEntityViewFromEntity(const std::shared_ptr<Entity> &entity)
+    {
+        EntityView view;
+
+        if (!entity || entity->isDead())
+        {
+            return view;
+        }
+
+        view.x = entity->getX();
+        view.y = entity->getY();
+        view.hp = entity->getHp();
+        view.maxHp = entity->getMaxHp();
+        view.equippedAffixes = entity->getEquippedAffixes();
+
+        if (dynamic_cast<Enemy *>(entity.get()))
+        {
+            view.kind = EntityKind::Enemy;
+        }
+        else if (dynamic_cast<MeleeTower *>(entity.get()))
+        {
+            view.kind = EntityKind::MeleeTower;
+        }
+        else if (dynamic_cast<RangedTower *>(entity.get()))
+        {
+            view.kind = EntityKind::RangedTower;
+        }
+
+        return view;
+    }
+}
+
 Game::Game(const int w, const int h)
     : map(w, h),
       enemyFactory(),
@@ -93,87 +127,6 @@ void Game::spawnEnemy()
 
     addEntity(std::move(enemy));
     spawnedEnemyCount++;
-}
-
-void Game::render() const
-{
-#ifdef _WIN32
-    system("cls");
-#else
-    std::cout << "\033[2J\033[H";
-#endif
-
-    std::cout << "Gold: " << money
-              << "  HP: " << playerHp
-              << "  Enemies: " << spawnedEnemyCount << "/" << totalEnemiesToSpawn;
-
-    if (gameOver)
-    {
-        std::cout << "  Result: " << (victory ? "Victory" : "Defeat");
-    }
-
-    std::cout << std::endl;
-
-    for (int i = 0; i < map.getHeight(); i++)
-    {
-        for (int j = 0; j < map.getWidth(); j++)
-        {
-            Entity *entityAtPos = nullptr;
-
-            for (auto &e : allEntities)
-            {
-                if (!e || e->isDead())
-                {
-                    continue;
-                }
-
-                if (static_cast<int>(e->getX() + 0.5f) == j &&
-                    static_cast<int>(e->getY() + 0.5f) == i)
-                {
-                    entityAtPos = e.get();
-                    break;
-                }
-            }
-
-            if (entityAtPos)
-            {
-                if (dynamic_cast<Enemy *>(entityAtPos))
-                {
-                    std::cout << "E";
-                }
-                else
-                {
-                    std::cout << "T";
-                }
-            }
-            else
-            {
-                switch (map.getTileType(j, i))
-                {
-                case TileType::GRASS:
-                    std::cout << ".";
-                    break;
-                case TileType::ROAD:
-                    std::cout << "#";
-                    break;
-                case TileType::ROCK:
-                    std::cout << "O";
-                    break;
-                case TileType::START:
-                    std::cout << "S";
-                    break;
-                case TileType::END:
-                    std::cout << "@";
-                    break;
-                default:
-                    std::cout << "?";
-                    break;
-                }
-            }
-        }
-
-        std::cout << std::endl;
-    }
 }
 
 bool Game::placeTower(std::unique_ptr<Tower> tower)
@@ -385,4 +338,44 @@ bool Game::purchaseAffix(int x, int y, AffixId affixId)
     addMoney(cost);
 
     return false;
+}
+
+std::vector<EntityView> Game::getEntityViews() const
+{
+    std::vector<EntityView> views;
+
+    for (const auto &entity : allEntities)
+    {
+        EntityView view = makeEntityViewFromEntity(entity);
+        if (view.kind != EntityKind::None)
+        {
+            views.push_back(view);
+        }
+    }
+
+    return views;
+}
+
+EntityView Game::getEntityViewAt(int x, int y) const
+{
+    for (const auto &entity : allEntities)
+    {
+        if (!entity || entity->isDead())
+        {
+            continue;
+        }
+
+        if (static_cast<int>(entity->getX() + 0.5f) == x &&
+            static_cast<int>(entity->getY() + 0.5f) == y)
+        {
+            return makeEntityViewFromEntity(entity);
+        }
+    }
+
+    return EntityView{};
+}
+
+TileType Game::getTileAt(int x, int y) const
+{
+    return map.getTileType(x, y);
 }

@@ -31,4 +31,5 @@ add_executable(TowerDefense main.cpp
         src/components/AffixTypes.h
         src/render/ConsoleRenderer.h
         src/render/ConsoleRenderer.cpp
+        src/view/GameView.h
         )
