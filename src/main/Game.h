@@ -28,6 +28,7 @@ class Game
     int spawnedEnemyCount;
     bool gameOver;
     bool victory;
+    bool paused;
 
     // 根据地图坐标查找该格上的实体
     std::shared_ptr<Entity> findEntityAt(int x, int y);
@@ -36,6 +37,17 @@ class Game
     bool canEquipAffixTo(const Entity &entity, AffixId affixId) const;
 
     bool canPurchaseAffixFor(const Entity &entity, AffixId affixId) const;
+
+    // 给指定坐标的实体购买并装备词缀
+    bool purchaseAffix(int x, int y, AffixId affixId);
+
+    // 出售指定坐标实体身上的词缀，返还购买价 80%
+    bool sellAffix(int x, int y, AffixId affixId);
+
+    // 向游戏中添加单位
+    void addEntity(std::unique_ptr<Entity> entity);
+    // 放置塔
+    bool placeTower(std::unique_ptr<Tower> tower);
 
 public:
     // 公共成员函数
@@ -67,10 +79,6 @@ public:
     void update(float deltaTime);
     // 在地图起点生成一个敌人的快捷方法
     void spawnEnemy();
-    // 向游戏中添加单位
-    void addEntity(std::unique_ptr<Entity> entity);
-    // 放置塔
-    bool placeTower(std::unique_ptr<Tower> tower);
 
     // 判断玩家金币是否足够
     bool canAfford(int cost) const;
@@ -81,11 +89,24 @@ public:
     // 增加金币
     void addMoney(int amount);
 
-    // 给指定坐标的实体购买并装备词缀
-    bool purchaseAffix(int x, int y, AffixId affixId);
+    // 在指定格子放置近战塔
+    bool placeMeleeTowerAt(int x, int y);
 
-    // 出售指定坐标实体身上的词缀，返还购买价 80%
-    bool sellAffix(int x, int y, AffixId affixId);
+    // 在指定格子放置远程塔
+    bool placeRangedTowerAt(int x, int y);
+
+    // GUI 友好的购买接口，内部调用 purchaseAffix
+    bool buyAffixAt(int x, int y, AffixId affixId);
+
+    // GUI 友好的出售接口，内部调用 sellAffix
+    bool sellAffixAt(int x, int y, AffixId affixId);
+
+    // 暂停/继续
+    void setPaused(bool paused);
+    [[nodiscard]] bool isPaused() const;
+
+    // 重置本局，保留地图
+    void reset();
 };
 
 #endif // GAME_H

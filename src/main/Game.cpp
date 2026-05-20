@@ -1,10 +1,6 @@
 //
 // Created by Lenovo on 26-1-12.
 //
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "Game.h"
 #include <algorithm>
 
@@ -50,14 +46,15 @@ Game::Game(const int w, const int h)
       totalEnemiesToSpawn(20),
       spawnedEnemyCount(0),
       gameOver(false),
-      victory(false)
+      victory(false),
+      paused(false)
 {
     allEntities.clear();
 }
 
 void Game::update(const float deltaTime)
 {
-    if (gameOver)
+    if (gameOver || paused)
     {
         return;
     }
@@ -378,4 +375,63 @@ EntityView Game::getEntityViewAt(int x, int y) const
 TileType Game::getTileAt(int x, int y) const
 {
     return map.getTileType(x, y);
+}
+
+bool Game::placeMeleeTowerAt(int x, int y)
+{
+    return placeTower(std::make_unique<MeleeTower>(
+        static_cast<float>(x),
+        static_cast<float>(y),
+        100,
+        100,
+        10,
+        1.0f,
+        0.5f,
+        0.0f,
+        2));
+}
+
+bool Game::placeRangedTowerAt(int x, int y)
+{
+    return placeTower(std::make_unique<RangedTower>(
+        8,
+        4.0f,
+        0.8f,
+        static_cast<float>(x),
+        static_cast<float>(y),
+        100,
+        100));
+}
+
+bool Game::buyAffixAt(int x, int y, AffixId affixId)
+{
+    return purchaseAffix(x, y, affixId);
+}
+
+bool Game::sellAffixAt(int x, int y, AffixId affixId)
+{
+    return sellAffix(x, y, affixId);
+}
+
+void Game::setPaused(bool paused)
+{
+    this->paused = paused;
+}
+
+bool Game::isPaused() const
+{
+    return paused;
+}
+
+void Game::reset()
+{
+    allEntities.clear();
+
+    money = 1000;
+    playerHp = 10;
+    totalEnemiesToSpawn = 20;
+    spawnedEnemyCount = 0;
+    gameOver = false;
+    victory = false;
+    paused = false;
 }

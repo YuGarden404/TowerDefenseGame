@@ -12,8 +12,19 @@ void ConsoleRenderer::render(const Game &game) const
 
     std::cout << "Gold: " << game.getMoney()
               << "  HP: " << game.getPlayerHp()
-              << "  Enemies: " << game.getSpawnedEnemyCount() << "/" << game.getTotalEnemiesToSpawn()
-              << std::endl;
+              << "  Enemies: " << game.getSpawnedEnemyCount() << "/" << game.getTotalEnemiesToSpawn();
+
+    if (game.isPaused())
+    {
+        std::cout << "  Paused";
+    }
+
+    if (game.isGameOver())
+    {
+        std::cout << "  Result: " << (game.isVictory() ? "Victory" : "Defeat");
+    }
+
+    std::cout << std::endl;
 
     for (int y = 0; y < game.getMap().getHeight(); y++)
     {

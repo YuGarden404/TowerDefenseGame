@@ -74,33 +74,20 @@ int ConsoleRendererTest()
 
     game.setTotalEnemiesToSpawn(5);
 
-    game.placeTower(std::make_unique<MeleeTower>(
-        5, 5,
-        100, 100,
-        10,
-        1.0f,
-        0.5f,
-        0.0f,
-        2));
-
-    game.placeTower(std::make_unique<RangedTower>(
-        8,
-        4.0f,
-        0.8f,
-        5, 4,
-        100, 100));
+    game.placeMeleeTowerAt(5, 5);
+    game.placeRangedTowerAt(5, 4);
 
     bool flag[9] = {false, false, false, false, false, false, false, false, false};
 
-    flag[0] = game.purchaseAffix(5, 4, AffixId::Burn);
-    flag[1] = game.purchaseAffix(5, 4, AffixId::Burn);
-    flag[2] = game.purchaseAffix(5, 4, AffixId::Slow);
-    flag[3] = game.purchaseAffix(5, 5, AffixId::Berserk);
-    flag[4] = game.purchaseAffix(5, 5, AffixId::Burn);
-    flag[5] = game.purchaseAffix(5, 4, AffixId::Berserk);
-    flag[6] = game.purchaseAffix(5, 4, AffixId::Blink);
-    flag[7] = game.sellAffix(5, 4, AffixId::Slow);
-    flag[8] = game.sellAffix(5, 4, AffixId::Slow);
+    flag[0] = game.buyAffixAt(5, 4, AffixId::Burn);
+    flag[1] = game.buyAffixAt(5, 4, AffixId::Burn);
+    flag[2] = game.buyAffixAt(5, 4, AffixId::Slow);
+    flag[3] = game.buyAffixAt(5, 5, AffixId::Berserk);
+    flag[4] = game.buyAffixAt(5, 5, AffixId::Burn);
+    flag[5] = game.buyAffixAt(5, 4, AffixId::Berserk);
+    flag[6] = game.buyAffixAt(5, 4, AffixId::Blink);
+    flag[7] = game.sellAffixAt(5, 4, AffixId::Slow);
+    flag[8] = game.sellAffixAt(5, 4, AffixId::Slow);
 
     int frameCount = 0;
 
