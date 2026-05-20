@@ -6,6 +6,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include <algorithm>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       game(1, 1),
@@ -13,21 +15,24 @@ MainWindow::MainWindow(QWidget *parent)
       timer(new QTimer(this)),
       selectedInfoLabel(new QLabel(this)),
       messageLabel(new QLabel(this)),
+      placeMeleeButton(new QPushButton(this)),
+      placeRangedButton(new QPushButton(this)),
       sellTowerButton(new QPushButton("Sell Tower", this)),
-      placeMeleeButton(new QPushButton("Place Melee", this)),
-      placeRangedButton(new QPushButton("Place Ranged", this)),
-      buyBurnButton(new QPushButton("Buy Burn", this)),
-      buySlowButton(new QPushButton("Buy Slow", this)),
-      buyBerserkButton(new QPushButton("Buy Berserk", this)),
-      sellBurnButton(new QPushButton("Sell Burn", this)),
-      sellSlowButton(new QPushButton("Sell Slow", this)),
-      sellBerserkButton(new QPushButton("Sell Berserk", this)),
-      pauseButton(new QPushButton("Pause", this)),
-      resetButton(new QPushButton("Reset", this))
+      buyBurnButton(new QPushButton(this)),
+      buySlowButton(new QPushButton(this)),
+      buyBerserkButton(new QPushButton(this)),
+      sellBurnButton(new QPushButton(this)),
+      sellSlowButton(new QPushButton(this)),
+      sellBerserkButton(new QPushButton(this)),
+      pauseButton(new QPushButton("暂停", this)),
+      resetButton(new QPushButton("重置", this)),
+      spawnTimer(0.0f),
+      spawnInterval(1.0f)
 {
     initializeGame();
     setupUi();
     setupConnections();
+    refreshActionButtons();
 
     timer->start(50);
 }
@@ -52,32 +57,43 @@ void MainWindow::initializeGame()
 
 void MainWindow::setupUi()
 {
+    placeMeleeButton->setText(QString("部署 Melee (%1)").arg(MeleeTower::COST));
+    placeRangedButton->setText(QString("部署 Ranged (%1)").arg(RangedTower::COST));
+
+    buyBurnButton->setText(QString("购买 Burn (%1)").arg(getAffixBuyPrice(AffixId::Burn)));
+    buySlowButton->setText(QString("购买 Slow (%1)").arg(getAffixBuyPrice(AffixId::Slow)));
+    buyBerserkButton->setText(QString("购买 Berserk (%1)").arg(getAffixBuyPrice(AffixId::Berserk)));
+
+    sellBurnButton->setText(QString("出售 Burn (%1)").arg(getAffixSellPrice(AffixId::Burn)));
+    sellSlowButton->setText(QString("出售 Slow (%1)").arg(getAffixSellPrice(AffixId::Slow)));
+    sellBerserkButton->setText(QString("出售 Berserk (%1)").arg(getAffixSellPrice(AffixId::Berserk)));
+
     auto *central = new QWidget(this);
     auto *rootLayout = new QHBoxLayout(central);
     auto *sideLayout = new QVBoxLayout();
 
-    selectedInfoLabel->setMinimumWidth(230);
+    selectedInfoLabel->setMinimumWidth(250);
     selectedInfoLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     selectedInfoLabel->setWordWrap(true);
-    selectedInfoLabel->setText("Selected: none");
+    selectedInfoLabel->setText("已选择：无");
 
-    messageLabel->setMinimumWidth(230);
+    messageLabel->setMinimumWidth(250);
     messageLabel->setWordWrap(true);
     messageLabel->setText(QString::fromStdString(game.getLastMessage()));
 
-    auto *buildGroup = new QGroupBox("Build", this);
+    auto *buildGroup = new QGroupBox("建造", this);
     auto *buildLayout = new QVBoxLayout(buildGroup);
     buildLayout->addWidget(placeMeleeButton);
     buildLayout->addWidget(placeRangedButton);
     buildLayout->addWidget(sellTowerButton);
 
-    auto *buyGroup = new QGroupBox("Buy Affix", this);
+    auto *buyGroup = new QGroupBox("购买词缀", this);
     auto *buyLayout = new QVBoxLayout(buyGroup);
     buyLayout->addWidget(buyBurnButton);
     buyLayout->addWidget(buySlowButton);
     buyLayout->addWidget(buyBerserkButton);
 
-    auto *sellGroup = new QGroupBox("Sell Affix", this);
+    auto *sellGroup = new QGroupBox("出售词缀", this);
     auto *sellLayout = new QVBoxLayout(sellGroup);
     sellLayout->addWidget(sellBurnButton);
     sellLayout->addWidget(sellSlowButton);
@@ -96,27 +112,41 @@ void MainWindow::setupUi()
     rootLayout->addLayout(sideLayout);
 
     setCentralWidget(central);
-    setWindowTitle("Tower Defense");
-    resize(1100, 560);
+    setWindowTitle("塔防游戏");
+    resize(1120, 560);
 }
 
 void MainWindow::setupConnections()
 {
     connect(gameWidget, &GameWidget::cellClicked, this, [this](int x, int y)
-            { updateSelectedInfo(x, y); });
+            {
+                updateSelectedInfo(x, y);
+                refreshActionButtons(); });
 
     connect(timer, &QTimer::timeout, this, [this]()
             {
-                if (!game.isGameOver())
+            constexpr float deltaTime = 0.05f;
+
+            if (!game.isGameOver() && !game.isPaused())
+            {
+                spawnTimer += deltaTime;
+
+                if (spawnTimer >= spawnInterval)
                 {
                     game.spawnEnemy();
-                    game.update(0.05f);
-                    gameWidget->update();
-                    refreshSelectedInfo();
-                } });
+                    spawnTimer = 0.0f;
+                }
+
+                game.update(deltaTime);
+            }
+
+            gameWidget->update();
+            refreshSelectedInfo();
+            refreshActionButtons(); });
 
     connect(placeMeleeButton, &QPushButton::clicked, this, &MainWindow::handlePlaceMelee);
     connect(placeRangedButton, &QPushButton::clicked, this, &MainWindow::handlePlaceRanged);
+    connect(sellTowerButton, &QPushButton::clicked, this, &MainWindow::handleSellTower);
 
     connect(buyBurnButton, &QPushButton::clicked, this, [this]()
             { handleBuyAffix(AffixId::Burn); });
@@ -134,8 +164,6 @@ void MainWindow::setupConnections()
 
     connect(pauseButton, &QPushButton::clicked, this, &MainWindow::handleTogglePause);
     connect(resetButton, &QPushButton::clicked, this, &MainWindow::handleReset);
-
-    connect(sellTowerButton, &QPushButton::clicked, this, &MainWindow::handleSellTower);
 }
 
 void MainWindow::updateSelectedInfo(int x, int y)
@@ -144,22 +172,22 @@ void MainWindow::updateSelectedInfo(int x, int y)
     const EntityView entity = game.getEntityViewAt(x, y);
 
     QString text;
-    text += QString("Selected: (%1, %2)\n").arg(x).arg(y);
-    text += QString("Tile: %1\n").arg(tileTypeToText(tileType));
+    text += QString("选择：(%1, %2)\n").arg(x).arg(y);
+    text += QString("地块类型：%1\n").arg(tileTypeToText(tileType));
 
     if (entity.kind == EntityKind::None)
     {
-        text += "Entity: none\n";
+        text += "实体：无\n";
     }
     else
     {
-        text += QString("Entity: %1\n").arg(entityKindToText(entity.kind));
-        text += QString("HP: %1 / %2\n").arg(entity.hp).arg(entity.maxHp);
+        text += QString("实体：%1\n").arg(entityKindToText(entity.kind));
+        text += QString("HP：%1 / %2\n").arg(entity.hp).arg(entity.maxHp);
 
-        text += "Affixes: ";
+        text += "词缀：";
         if (entity.equippedAffixes.empty())
         {
-            text += "none";
+            text += "无";
         }
         else
         {
@@ -188,6 +216,75 @@ void MainWindow::refreshSelectedInfo()
     updateSelectedInfo(selectedX(), selectedY());
 }
 
+void MainWindow::updateMessageLabel()
+{
+    const QString message = QString::fromStdString(game.getLastMessage());
+
+    if (message.isEmpty())
+    {
+        messageLabel->setText("无操作信息。");
+        return;
+    }
+
+    messageLabel->setText(message);
+}
+
+void MainWindow::refreshActionButtons()
+{
+    const bool gameRunning = !game.isGameOver();
+    const bool hasSelection = hasSelectedCell();
+
+    placeMeleeButton->setEnabled(false);
+    placeRangedButton->setEnabled(false);
+    sellTowerButton->setEnabled(false);
+
+    buyBurnButton->setEnabled(false);
+    buySlowButton->setEnabled(false);
+    buyBerserkButton->setEnabled(false);
+
+    sellBurnButton->setEnabled(false);
+    sellSlowButton->setEnabled(false);
+    sellBerserkButton->setEnabled(false);
+
+    pauseButton->setEnabled(gameRunning);
+    resetButton->setEnabled(true);
+
+    if (!gameRunning || !hasSelection)
+    {
+        return;
+    }
+
+    const int x = selectedX();
+    const int y = selectedY();
+    const EntityView entity = game.getEntityViewAt(x, y);
+
+    if (entity.kind == EntityKind::None)
+    {
+        placeMeleeButton->setEnabled(
+            game.getMap().canPlaceMeleeTower(x, y) &&
+            game.canAfford(MeleeTower::COST));
+
+        placeRangedButton->setEnabled(
+            game.getMap().canPlaceRangedTower(x, y) &&
+            game.canAfford(RangedTower::COST));
+
+        return;
+    }
+
+    const bool isTower = entity.kind == EntityKind::MeleeTower ||
+                         entity.kind == EntityKind::RangedTower;
+
+    sellTowerButton->setEnabled(isTower);
+
+    buyBurnButton->setEnabled(selectedEntityCanBuyAffix(AffixId::Burn));
+    buySlowButton->setEnabled(selectedEntityCanBuyAffix(AffixId::Slow));
+    buyBerserkButton->setEnabled(selectedEntityCanBuyAffix(AffixId::Berserk));
+
+    sellBurnButton->setEnabled(selectedEntityHasAffix(AffixId::Burn));
+    sellSlowButton->setEnabled(selectedEntityHasAffix(AffixId::Slow));
+    sellBerserkButton->setEnabled(selectedEntityHasAffix(AffixId::Berserk));
+}
+
 bool MainWindow::hasSelectedCell() const
 {
     return selectedX() >= 0 && selectedY() >= 0;
@@ -203,11 +300,56 @@ int MainWindow::selectedY() const
     return gameWidget->getSelectedY();
 }
 
+EntityView MainWindow::selectedEntity() const
+{
+    if (!hasSelectedCell())
+    {
+        return EntityView{};
+    }
+
+    return game.getEntityViewAt(selectedX(), selectedY());
+}
+
+bool MainWindow::selectedEntityHasAffix(AffixId affixId) const
+{
+    const EntityView entity = selectedEntity();
+
+    return std::find(entity.equippedAffixes.begin(),
+                     entity.equippedAffixes.end(),
+                     affixId) != entity.equippedAffixes.end();
+}
+
+bool MainWindow::selectedEntityCanBuyAffix(AffixId affixId) const
+{
+    const EntityView entity = selectedEntity();
+
+    if (selectedEntityHasAffix(affixId))
+    {
+        return false;
+    }
+
+    if (!game.canAfford(getAffixBuyPrice(affixId)))
+    {
+        return false;
+    }
+
+    switch (affixId)
+    {
+    case AffixId::Burn:
+    case AffixId::Slow:
+        return entity.kind == EntityKind::RangedTower;
+    case AffixId::Berserk:
+        return entity.kind == EntityKind::MeleeTower;
+    default:
+        return false;
+    }
+}
+
 void MainWindow::handlePlaceMelee()
 {
     if (!hasSelectedCell())
     {
-        messageLabel->setText("请先选择一个地图格子。");
+        messageLabel->setText("请先选中一个单元格。");
         return;
     }
 
@@ -215,13 +357,14 @@ void MainWindow::handlePlaceMelee()
     gameWidget->update();
     refreshSelectedInfo();
     updateMessageLabel();
+    refreshActionButtons();
 }
 
 void MainWindow::handlePlaceRanged()
 {
     if (!hasSelectedCell())
     {
-        messageLabel->setText("请先选择一个地图格子。");
+        messageLabel->setText("请先选中一个单元格。");
         return;
     }
 
@@ -229,13 +372,29 @@ void MainWindow::handlePlaceRanged()
     gameWidget->update();
     refreshSelectedInfo();
     updateMessageLabel();
+    refreshActionButtons();
+}
+
+void MainWindow::handleSellTower()
+{
+    if (!hasSelectedCell())
+    {
+        messageLabel->setText("请先选中一个单元格。");
+        return;
+    }
+
+    game.sellTowerAt(selectedX(), selectedY());
+    gameWidget->update();
+    refreshSelectedInfo();
+    updateMessageLabel();
+    refreshActionButtons();
 }
 
 void MainWindow::handleBuyAffix(AffixId affixId)
 {
     if (!hasSelectedCell())
     {
-        messageLabel->setText("请先选择一个地图格子。");
+        messageLabel->setText("请先选中一个单元格。");
         return;
     }
 
@@ -243,13 +402,14 @@ void MainWindow::handleBuyAffix(AffixId affixId)
     gameWidget->update();
     refreshSelectedInfo();
     updateMessageLabel();
+    refreshActionButtons();
 }
 
 void MainWindow::handleSellAffix(AffixId affixId)
 {
     if (!hasSelectedCell())
     {
-        messageLabel->setText("请先选择一个地图格子。");
+        messageLabel->setText("请先选中一个单元格。");
         return;
     }
 
@@ -257,16 +417,18 @@ void MainWindow::handleSellAffix(AffixId affixId)
     gameWidget->update();
     refreshSelectedInfo();
     updateMessageLabel();
+    refreshActionButtons();
 }
 
 void MainWindow::handleTogglePause()
 {
     game.setPaused(!game.isPaused());
-    pauseButton->setText(game.isPaused() ? "Resume" : "Pause");
+    pauseButton->setText(game.isPaused() ? "继续" : "暂停");
 
     gameWidget->update();
     refreshSelectedInfo();
     updateMessageLabel();
+    refreshActionButtons();
 }
 
 void MainWindow::handleReset()
@@ -274,13 +436,15 @@ void MainWindow::handleReset()
     game.reset();
     initializeGame();
 
-    pauseButton->setText("Pause");
+    spawnTimer = 0.0f;
+    pauseButton->setText("暂停");
 
     gameWidget->setSelectedCell(-1, -1);
-    selectedInfoLabel->setText("Selected: none");
+    selectedInfoLabel->setText("未选中任何对象");
 
     gameWidget->update();
     updateMessageLabel();
+    refreshActionButtons();
 }
 
 QString MainWindow::tileTypeToText(TileType type) const
@@ -334,30 +498,4 @@ QString MainWindow::affixIdToText(AffixId affixId) const
     default:
         return "Unknown";
     }
-}
-
-void MainWindow::updateMessageLabel()
-{
-    const QString message = QString::fromStdString(game.getLastMessage());
-
-    if (message.isEmpty())
-    {
-        messageLabel->setText("暂无操作消息。");
-        return;
-    }
-
-    messageLabel->setText(message);
-}
-
-void MainWindow::handleSellTower()
-{
-    if (!hasSelectedCell())
-    {
-        return;
-    }
-
-    game.sellTowerAt(selectedX(), selectedY());
-    gameWidget->update();
-    refreshSelectedInfo();
-    updateMessageLabel();
 }

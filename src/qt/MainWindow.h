@@ -6,8 +6,9 @@
 
 #include <QLabel>
 #include <QMainWindow>
-#include <QTimer>
 #include <QPushButton>
+#include <QString>
+#include <QTimer>
 
 class MainWindow : public QMainWindow
 {
@@ -20,9 +21,11 @@ private:
     QTimer *timer;
 
     QLabel *selectedInfoLabel;
+    QLabel *messageLabel;
 
     QPushButton *placeMeleeButton;
     QPushButton *placeRangedButton;
+    QPushButton *sellTowerButton;
 
     QPushButton *buyBurnButton;
     QPushButton *buySlowButton;
@@ -35,8 +38,8 @@ private:
     QPushButton *pauseButton;
     QPushButton *resetButton;
 
-    QLabel *messageLabel;
-    QPushButton *sellTowerButton;
+    float spawnTimer;
+    float spawnInterval;
 
     void initializeGame();
     void setupUi();
@@ -44,13 +47,20 @@ private:
 
     void updateSelectedInfo(int x, int y);
     void refreshSelectedInfo();
+    void updateMessageLabel();
+    void refreshActionButtons();
 
     [[nodiscard]] bool hasSelectedCell() const;
     [[nodiscard]] int selectedX() const;
     [[nodiscard]] int selectedY() const;
 
+    [[nodiscard]] EntityView selectedEntity() const;
+    [[nodiscard]] bool selectedEntityHasAffix(AffixId affixId) const;
+    [[nodiscard]] bool selectedEntityCanBuyAffix(AffixId affixId) const;
+
     void handlePlaceMelee();
     void handlePlaceRanged();
+    void handleSellTower();
 
     void handleBuyAffix(AffixId affixId);
     void handleSellAffix(AffixId affixId);
@@ -61,9 +71,6 @@ private:
     [[nodiscard]] QString tileTypeToText(TileType type) const;
     [[nodiscard]] QString entityKindToText(EntityKind kind) const;
     [[nodiscard]] QString affixIdToText(AffixId affixId) const;
-
-    void updateMessageLabel();
-    void handleSellTower();
 };
 
 #endif // MAINWINDOW_H
