@@ -47,7 +47,8 @@ Game::Game(const int w, const int h)
       spawnedEnemyCount(0),
       gameOver(false),
       victory(false),
-      paused(false)
+      paused(false),
+      lastMessage("Game started")
 {
     allEntities.clear();
 }
@@ -104,6 +105,21 @@ void Game::update(const float deltaTime)
     }
 }
 
+void Game::setLastMessage(const std::string &message)
+{
+    lastMessage = message;
+}
+
+const std::string &Game::getLastMessage() const
+{
+    return lastMessage;
+}
+
+void Game::clearLastMessage()
+{
+    lastMessage.clear();
+}
+
 void Game::spawnEnemy()
 {
     if (gameOver)
@@ -148,7 +164,8 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
 
     if (!canPlace)
     {
-        std::cout << "放置失败：无法在该地块上放置防御塔" << std::endl;
+        setLastMessage("放置失败：无法在该地块上放置防御塔");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -158,7 +175,8 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
             static_cast<int>(e->getX() + 0.5f) == ix &&
             static_cast<int>(e->getY() + 0.5f) == iy)
         {
-            std::cout << "放置失败：该位置已有防御塔" << std::endl;
+            setLastMessage("放置失败：该位置已有防御塔");
+            std::cout << lastMessage << std::endl;
             return false;
         }
     }
@@ -183,7 +201,8 @@ bool Game::spendMoney(int amount)
 {
     if (amount < 0)
     {
-        std::cout << "Failed to spend money: Amount must be a positive number" << std::endl;
+        setLastMessage("消费失败：金额必须为正数");
+        std::cout << lastMessage << std::endl;
         return false;
     }
     if (canAfford(amount))
@@ -202,7 +221,8 @@ void Game::addMoney(int amount)
     }
     else
     {
-        std::cout << "Failed to add money: Amount must be a positive number" << std::endl;
+        setLastMessage("充值失败：金额必须为正数");
+        std::cout << lastMessage << std::endl;
     }
 }
 
@@ -235,25 +255,35 @@ bool Game::sellAffix(int x, int y, AffixId affixId)
     auto entity = findEntityAt(x, y);
     if (!entity)
     {
+        setLastMessage("出售失败：未找到指定实体");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (!canPurchaseAffixFor(*entity, affixId))
     {
+        setLastMessage("出售失败：无法在该实体上出售此词缀");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (!entity->hasEquippedAffix(affixId))
     {
+        setLastMessage("出售失败：该实体未装备此词缀");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (entity->unequipAffix(affixId))
     {
         addMoney(getAffixSellPrice(affixId));
+        setLastMessage("出售词缀成功。");
+        std::cout << lastMessage << std::endl;
         return true;
     }
 
+    setLastMessage("出售词缀失败：卸载词缀时发生未知错误。");
+    std::cout << lastMessage << std::endl;
     return false;
 }
 
@@ -318,31 +348,42 @@ bool Game::purchaseAffix(int x, int y, AffixId affixId)
     auto entity = findEntityAt(x, y);
     if (!entity)
     {
+        setLastMessage("购买词缀失败：未选中任何实体。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (!canPurchaseAffixFor(*entity, affixId))
     {
+        setLastMessage("购买词缀失败：无法在该实体上购买此词缀。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (entity->hasEquippedAffix(affixId))
     {
+        setLastMessage("购买词缀失败：该实体已装备此词缀。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     int cost = getAffixBuyPrice(affixId);
     if (!spendMoney(cost))
     {
+        setLastMessage("购买词缀失败：金币不足。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (entity->equipAffix(affixId))
     {
+        setLastMessage("购买词缀成功。");
+        std::cout << lastMessage << std::endl;
         return true;
     }
     addMoney(cost);
-
+    setLastMessage("购买词缀失败：装备词缀时发生未知错误。");
+    std::cout << lastMessage << std::endl;
     return false;
 }
 
@@ -393,7 +434,8 @@ bool Game::placeMeleeTowerAt(int x, int y)
 
     if (!canAfford(cost))
     {
-        std::cout << "Placement failed: not enough gold." << std::endl;
+        setLastMessage("放置失败：金币不足。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -403,6 +445,7 @@ bool Game::placeMeleeTowerAt(int x, int y)
     }
 
     money -= cost;
+    setLastMessage("近战塔已放置。");
     return true;
 }
 
@@ -413,7 +456,8 @@ bool Game::placeRangedTowerAt(int x, int y)
 
     if (!canAfford(cost))
     {
-        std::cout << "Placement failed: not enough gold." << std::endl;
+        setLastMessage("放置失败：金币不足。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -423,6 +467,7 @@ bool Game::placeRangedTowerAt(int x, int y)
     }
 
     money -= cost;
+    setLastMessage("远程塔已放置。");
     return true;
 }
 
@@ -457,6 +502,8 @@ void Game::reset()
     gameOver = false;
     victory = false;
     paused = false;
+    setLastMessage("游戏重置。");
+    std::cout << lastMessage << std::endl;
 }
 
 bool Game::sellTower(int x, int y)
@@ -464,27 +511,42 @@ bool Game::sellTower(int x, int y)
     auto entity = findEntityAt(x, y);
     if (!entity)
     {
-        std::cout << "Sell tower failed: no entity at selected cell." << std::endl;
+        setLastMessage("出售防御塔失败：选中的位置没有实体。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     auto *tower = dynamic_cast<Tower *>(entity.get());
     if (!tower)
     {
-        std::cout << "Sell tower failed: selected entity is not a tower." << std::endl;
+        setLastMessage("出售防御塔失败：选中的对象并非防御塔。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
-    const int sellPrice = tower->getCost() * 70 / 100;
+    int refund = tower->getCost() * 70 / 100;
+
+    for (AffixId affixId : entity->getEquippedAffixes())
+    {
+        if (canPurchaseAffixFor(*entity, affixId))
+        {
+            refund += getAffixSellPrice(affixId);
+        }
+    }
 
     auto it = std::find(allEntities.begin(), allEntities.end(), entity);
     if (it == allEntities.end())
     {
+        setLastMessage("出售防御塔失败：未找到指定实体。");
+        std::cout << lastMessage << std::endl;
         return false;
     }
 
     allEntities.erase(it);
-    money += sellPrice;
+    money += refund;
+
+    setLastMessage("出售防御塔成功，已自动回收塔上词缀。");
+    std::cout << lastMessage << std::endl;
     return true;
 }
 

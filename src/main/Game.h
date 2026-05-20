@@ -15,6 +15,7 @@
 #include <thread>
 #include "EnemyFactory.h"
 #include "../view/GameView.h"
+#include <string>
 
 class Game
 {
@@ -29,6 +30,9 @@ class Game
     bool gameOver;
     bool victory;
     bool paused;
+    std::string lastMessage;
+
+    void setLastMessage(const std::string &message);
 
     // 根据地图坐标查找该格上的实体
     std::shared_ptr<Entity> findEntityAt(int x, int y);
@@ -74,6 +78,8 @@ public:
 
     // 返回指定地图格子的地形类型
     [[nodiscard]] TileType getTileAt(int x, int y) const;
+    [[nodiscard]] const std::string &getLastMessage() const;
+    void clearLastMessage();
 
     void setTotalEnemiesToSpawn(int total);
     bool allEnemiesCleared() const;
