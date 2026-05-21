@@ -74,6 +74,10 @@ void GameWidget::paintEvent(QPaintEvent *event)
     {
         drawAttackRange(painter);
     }
+    else
+    {
+        drawSelectedTowerRange(painter);
+    }
 
     drawSelection(painter);
 
@@ -96,7 +100,11 @@ void GameWidget::paintEvent(QPaintEvent *event)
 
     drawBottomHint(painter);
 
-    if (game.isPaused())
+    if (game.isGameOver())
+    {
+        drawGameOverOverlay(painter);
+    }
+    else if (game.isPaused())
     {
         drawPauseOverlay(painter);
     }
@@ -106,6 +114,12 @@ void GameWidget::mousePressEvent(QMouseEvent *event)
 {
     const int px = static_cast<int>(event->position().x());
     const int py = static_cast<int>(event->position().y());
+
+    if (game.isGameOver())
+    {
+        handleGameOverOverlayClick(px, py);
+        return;
+    }
 
     if (game.isPaused())
     {
@@ -173,6 +187,14 @@ void GameWidget::handlePauseOverlayClick(int pixelX, int pixelY)
     }
 
     if (resetButtonRect().contains(pixelX, pixelY))
+    {
+        emit resetRequested();
+    }
+}
+
+void GameWidget::handleGameOverOverlayClick(int pixelX, int pixelY)
+{
+    if (gameOverResetButtonRect().contains(pixelX, pixelY))
     {
         emit resetRequested();
     }
@@ -510,6 +532,17 @@ QRect GameWidget::closePauseButtonRect() const
     return QRect(panel.right() - 42, panel.top() + 12, 28, 28);
 }
 
+QRect GameWidget::gameOverPanelRect() const
+{
+    return QRect(width() / 2 - 190, height() / 2 - 120, 380, 240);
+}
+
+QRect GameWidget::gameOverResetButtonRect() const
+{
+    const QRect panel = gameOverPanelRect();
+    return QRect(panel.left() + 90, panel.top() + 148, 200, 40);
+}
+
 QRect GameWidget::meleeCardRect() const
 {
     return QRect(24, height() - 136, 128, 82);
@@ -576,13 +609,16 @@ void GameWidget::drawTopButtons(QPainter &painter)
         painter.drawText(startRect, Qt::AlignCenter, "Start Wave");
     }
 
-    QRect pauseRect = pauseButtonRect();
-    painter.setBrush(QColor(65, 90, 130));
-    painter.setPen(QPen(QColor(40, 55, 85), 2));
-    painter.drawRoundedRect(pauseRect, 6, 6);
+    if (!game.isGameOver())
+    {
+        QRect pauseRect = pauseButtonRect();
+        painter.setBrush(QColor(65, 90, 130));
+        painter.setPen(QPen(QColor(40, 55, 85), 2));
+        painter.drawRoundedRect(pauseRect, 6, 6);
 
-    painter.setPen(Qt::white);
-    painter.drawText(pauseRect, Qt::AlignCenter, "Pause");
+        painter.setPen(Qt::white);
+        painter.drawText(pauseRect, Qt::AlignCenter, "Pause");
+    }
 }
 
 void GameWidget::drawMap(QPainter &painter)
@@ -742,6 +778,11 @@ void GameWidget::drawEntities(QPainter &painter)
             painter.setPen(Qt::white);
             painter.setFont(QFont("Arial", 10, QFont::Bold));
             painter.drawText(QRect(centerX - 14, centerY - 8, 28, 22), Qt::AlignCenter, "R");
+        }
+
+        if (entity.kind == EntityKind::MeleeTower || entity.kind == EntityKind::RangedTower)
+        {
+            drawEquippedAffixBadges(painter, entity, centerX, centerY);
         }
 
         if (entity.maxHp > 0)
@@ -1021,26 +1062,179 @@ void GameWidget::drawAttackRange(QPainter &painter)
     painter.drawEllipse(center, radius, radius);
 }
 
+void GameWidget::drawSelectedTowerRange(QPainter &painter)
+{
+    if (!hasSelectedCell() || uiMode == UiMode::BuildPreview)
+    {
+        return;
+    }
+
+    const float range = selectedTowerRange();
+    if (range <= 0.0f)
+    {
+        return;
+    }
+
+    const QRect cell = mapCellRect(selectedX, selectedY);
+    const QPoint center = cell.center();
+    const int radius = static_cast<int>(range * tileSize);
+
+    painter.setBrush(QColor(255, 215, 90, 35));
+    painter.setPen(QPen(QColor(245, 175, 55, 150), 2));
+    painter.drawEllipse(center, radius, radius);
+}
+
+void GameWidget::drawEquippedAffixBadges(QPainter &painter, const EntityView &entity, int centerX, int centerY)
+{
+    if (entity.equippedAffixes.empty())
+    {
+        return;
+    }
+
+    int badgeX = centerX - 18;
+    const int badgeY = centerY - 28;
+
+    for (AffixId affixId : entity.equippedAffixes)
+    {
+        QColor color;
+        QString label;
+
+        switch (affixId)
+        {
+        case AffixId::Burn:
+            color = QColor(220, 90, 50);
+            label = "B";
+            break;
+        case AffixId::Slow:
+            color = QColor(90, 190, 235);
+            label = "S";
+            break;
+        case AffixId::Berserk:
+            color = QColor(180, 80, 190);
+            label = "Z";
+            break;
+        default:
+            color = QColor(120, 120, 120);
+            label = "?";
+            break;
+        }
+
+        QRect badge(badgeX, badgeY, 16, 16);
+
+        painter.setBrush(color);
+        painter.setPen(QPen(QColor(45, 50, 60), 1));
+        painter.drawEllipse(badge);
+
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Arial", 8, QFont::Bold));
+        painter.drawText(badge, Qt::AlignCenter, label);
+
+        badgeX += 18;
+    }
+}
+
+float GameWidget::selectedTowerRange() const
+{
+    const EntityView entity = selectedEntity();
+
+    if (entity.kind == EntityKind::MeleeTower)
+    {
+        return 1.0f;
+    }
+
+    if (entity.kind == EntityKind::RangedTower)
+    {
+        return 3.0f;
+    }
+
+    return 0.0f;
+}
+
+QString GameWidget::equippedAffixesText(const EntityView &entity) const
+{
+    if (entity.equippedAffixes.empty())
+    {
+        return "None";
+    }
+
+    QString text;
+
+    for (size_t i = 0; i < entity.equippedAffixes.size(); ++i)
+    {
+        if (i > 0)
+        {
+            text += ", ";
+        }
+
+        switch (entity.equippedAffixes[i])
+        {
+        case AffixId::Burn:
+            text += "Burn";
+            break;
+        case AffixId::Slow:
+            text += "Slow";
+            break;
+        case AffixId::Berserk:
+            text += "Berserk";
+            break;
+        case AffixId::Swift:
+            text += "Swift";
+            break;
+        case AffixId::Blink:
+            text += "Blink";
+            break;
+        default:
+            text += "Unknown";
+            break;
+        }
+    }
+
+    return text;
+}
+
+QString GameWidget::activeAffixesText(const EntityView &entity) const
+{
+    if (entity.activeAffixNames.empty())
+    {
+        return "None";
+    }
+
+    QString text;
+
+    for (size_t i = 0; i < entity.activeAffixNames.size(); ++i)
+    {
+        if (i > 0)
+        {
+            text += ", ";
+        }
+
+        text += QString::fromStdString(entity.activeAffixNames[i]);
+    }
+
+    return text;
+}
+
 void GameWidget::drawBottomHint(QPainter &painter)
 {
     QRect hintRect(20, height() - 42, width() - 40, 28);
 
-    painter.setBrush(QColor(255, 255, 255, 210));
+    painter.setBrush(QColor(255, 255, 255, 220));
     painter.setPen(QColor(180, 185, 190));
     painter.drawRoundedRect(hintRect, 6, 6);
 
     QString text;
-    if (uiMode == UiMode::BuildPreview)
+
+    if (game.isGameOver())
+    {
+        text = game.isVictory() ? "Victory! Press Reset to play again." : "Defeat. Press Reset to try again.";
+    }
+    else if (uiMode == UiMode::BuildPreview)
     {
         text = "Confirm or cancel tower placement.";
     }
     else if (selectedCellCanShowBuildCards())
     {
         text = "Choose a tower card to preview placement.";
-    }
-    else if (selectedEntityIsTower())
-    {
-        text = "Select an affix card or click X to sell the tower.";
     }
     else if (selectedX >= 0 && selectedY >= 0)
     {
@@ -1049,15 +1243,28 @@ void GameWidget::drawBottomHint(QPainter &painter)
 
         if (entity.kind == EntityKind::MeleeTower)
         {
-            text += " - Melee Tower";
+            text += QString(" - Melee Tower | HP %1/%2 | Affixes: %3 | Sell returns tower + affixes")
+                        .arg(entity.hp)
+                        .arg(entity.maxHp)
+                        .arg(equippedAffixesText(entity));
         }
         else if (entity.kind == EntityKind::RangedTower)
         {
-            text += " - Ranged Tower";
+            text += QString(" - Ranged Tower | HP %1/%2 | Affixes: %3 | Sell returns tower + affixes")
+                        .arg(entity.hp)
+                        .arg(entity.maxHp)
+                        .arg(equippedAffixesText(entity));
         }
         else if (entity.kind == EntityKind::Enemy)
         {
-            text += " - Enemy";
+            text += QString(" - Enemy | HP %1/%2 | Effects: %3")
+                        .arg(entity.hp)
+                        .arg(entity.maxHp)
+                        .arg(activeAffixesText(entity));
+        }
+        else
+        {
+            text += " - Empty";
         }
     }
     else
@@ -1115,4 +1322,41 @@ void GameWidget::drawPauseOverlay(QPainter &painter)
     painter.setPen(Qt::white);
     painter.setFont(QFont("Arial", 12, QFont::Bold));
     painter.drawText(closeRect, Qt::AlignCenter, "X");
+}
+
+void GameWidget::drawGameOverOverlay(QPainter &painter)
+{
+    painter.fillRect(rect(), QColor(20, 25, 30, 150));
+
+    const QRect panel = gameOverPanelRect();
+
+    painter.setBrush(QColor(245, 247, 250));
+    painter.setPen(QPen(QColor(80, 90, 105), 2));
+    painter.drawRoundedRect(panel, 12, 12);
+
+    const bool victory = game.isVictory();
+
+    const QString title = victory ? "Victory" : "Defeat";
+    const QString subtitle = victory ? "All enemies were cleared." : "The base has fallen.";
+    const QColor titleColor = victory ? QColor(60, 150, 90) : QColor(200, 75, 65);
+
+    painter.setPen(titleColor);
+    painter.setFont(QFont("Arial", 24, QFont::Bold));
+    painter.drawText(QRect(panel.left(), panel.top() + 32, panel.width(), 42), Qt::AlignCenter, title);
+
+    painter.setPen(QColor(55, 60, 68));
+    painter.setFont(QFont("Arial", 12));
+    painter.drawText(QRect(panel.left() + 24, panel.top() + 88, panel.width() - 48, 36),
+                     Qt::AlignCenter,
+                     subtitle);
+
+    const QRect resetRect = gameOverResetButtonRect();
+
+    painter.setBrush(QColor(65, 90, 130));
+    painter.setPen(QPen(QColor(40, 55, 85), 2));
+    painter.drawRoundedRect(resetRect, 6, 6);
+
+    painter.setPen(Qt::white);
+    painter.setFont(QFont("Arial", 12, QFont::Bold));
+    painter.drawText(resetRect, Qt::AlignCenter, "Reset");
 }

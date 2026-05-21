@@ -75,6 +75,7 @@ private:
     void drawSelection(QPainter &painter);
     void drawBottomHint(QPainter &painter);
     void drawPauseOverlay(QPainter &painter);
+    void drawGameOverOverlay(QPainter &painter);
 
     void drawBuildCards(QPainter &painter);
     void drawBuildCard(QPainter &painter, const QRect &rect, BuildChoice choice, bool enabled);
@@ -84,10 +85,13 @@ private:
     void drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice choice, bool enabled, bool equipped);
     void drawBuildGhost(QPainter &painter, const QRect &cell);
     void drawAttackRange(QPainter &painter);
+    void drawSelectedTowerRange(QPainter &painter);
+    void drawEquippedAffixBadges(QPainter &painter, const EntityView &entity, int centerX, int centerY);
 
     void handleMapClick(int pixelX, int pixelY);
     void handleTopButtonClick(int pixelX, int pixelY);
     void handlePauseOverlayClick(int pixelX, int pixelY);
+    void handleGameOverOverlayClick(int pixelX, int pixelY);
     void handleBuildCardClick(int pixelX, int pixelY);
     void handleBuildPreviewClick(int pixelX, int pixelY);
     void handleTowerActionClick(int pixelX, int pixelY);
@@ -106,8 +110,10 @@ private:
     [[nodiscard]] bool selectedCellCanShowBuildCards() const;
     [[nodiscard]] bool selectedCellCanPlaceMelee() const;
     [[nodiscard]] bool selectedCellCanPlaceRanged() const;
-
     [[nodiscard]] float selectedBuildRange() const;
+    [[nodiscard]] float selectedTowerRange() const;
+    [[nodiscard]] QString equippedAffixesText(const EntityView &entity) const;
+    [[nodiscard]] QString activeAffixesText(const EntityView &entity) const;
 
     [[nodiscard]] QRect mapCellRect(int x, int y) const;
     [[nodiscard]] QRect pauseButtonRect() const;
@@ -116,6 +122,8 @@ private:
     [[nodiscard]] QRect resumeButtonRect() const;
     [[nodiscard]] QRect resetButtonRect() const;
     [[nodiscard]] QRect closePauseButtonRect() const;
+    [[nodiscard]] QRect gameOverPanelRect() const;
+    [[nodiscard]] QRect gameOverResetButtonRect() const;
 
     [[nodiscard]] QRect meleeCardRect() const;
     [[nodiscard]] QRect rangedCardRect() const;
