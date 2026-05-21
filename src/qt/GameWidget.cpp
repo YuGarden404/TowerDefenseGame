@@ -525,7 +525,7 @@ void GameWidget::drawHud(QPainter &painter)
     painter.setPen(QColor(30, 35, 40));
     painter.setFont(QFont("Arial", 12, QFont::Bold));
 
-    QString status = QString("Gold: %1   HP: %2   Enemies: %3/%4")
+    QString status = QString("金币：%1   生命：%2   敌人：%3/%4")
                          .arg(game.getMoney())
                          .arg(game.getPlayerHp())
                          .arg(game.getSpawnedEnemyCount())
@@ -533,7 +533,7 @@ void GameWidget::drawHud(QPainter &painter)
 
     if (game.isGameOver())
     {
-        status += game.isVictory() ? "   Result: Victory" : "   Result: Defeat";
+        status += game.isVictory() ? "   结果：胜利" : "   结果：失败";
     }
 
     painter.drawText(20, 30, status);
@@ -551,7 +551,7 @@ void GameWidget::drawTopButtons(QPainter &painter)
         painter.drawRoundedRect(startRect, 6, 6);
 
         painter.setPen(Qt::white);
-        painter.drawText(startRect, Qt::AlignCenter, "Start Wave");
+        painter.drawText(startRect, Qt::AlignCenter, "开始波次");
     }
 
     if (!game.isGameOver())
@@ -562,7 +562,7 @@ void GameWidget::drawTopButtons(QPainter &painter)
         painter.drawRoundedRect(pauseRect, 6, 6);
 
         painter.setPen(Qt::white);
-        painter.drawText(pauseRect, Qt::AlignCenter, "Pause");
+        painter.drawText(pauseRect, Qt::AlignCenter, "暂停");
     }
 }
 
@@ -806,17 +806,17 @@ void GameWidget::drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice
     switch (choice)
     {
     case AffixChoice::Burn:
-        name = "Burn";
+        name = "燃烧";
         iconColor = QColor(220, 95, 55);
         cost = getAffixBuyPrice(AffixId::Burn);
         break;
     case AffixChoice::Slow:
-        name = "Slow";
+        name = "减速";
         iconColor = QColor(95, 190, 235);
         cost = getAffixBuyPrice(AffixId::Slow);
         break;
     case AffixChoice::Berserk:
-        name = "Berserk";
+        name = "狂暴";
         iconColor = QColor(180, 80, 190);
         cost = getAffixBuyPrice(AffixId::Berserk);
         break;
@@ -835,7 +835,7 @@ void GameWidget::drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice
 
     if (equipped)
     {
-        painter.drawText(costRect, Qt::AlignCenter, "Equipped");
+        painter.drawText(costRect, Qt::AlignCenter, "已装备");
     }
     else
     {
@@ -890,7 +890,7 @@ void GameWidget::drawBuildCard(QPainter &painter, const QRect &rect, BuildChoice
 
         painter.setPen(text);
         painter.setFont(QFont("Arial", 9, QFont::Bold));
-        painter.drawText(costRect, Qt::AlignCenter, QString("Cost %1").arg(MeleeTower::COST));
+        painter.drawText(costRect, Qt::AlignCenter, QString("花费 %1").arg(MeleeTower::COST));
     }
     else if (choice == BuildChoice::RangedTower)
     {
@@ -909,7 +909,7 @@ void GameWidget::drawBuildCard(QPainter &painter, const QRect &rect, BuildChoice
 
         painter.setPen(text);
         painter.setFont(QFont("Arial", 9, QFont::Bold));
-        painter.drawText(costRect, Qt::AlignCenter, QString("Cost %1").arg(RangedTower::COST));
+        painter.drawText(costRect, Qt::AlignCenter, QString("花费 %1").arg(RangedTower::COST));
     }
 }
 
@@ -1088,7 +1088,7 @@ QString GameWidget::equippedAffixesText(const EntityView &entity) const
 {
     if (entity.equippedAffixes.empty())
     {
-        return "None";
+        return "无";
     }
 
     QString text;
@@ -1103,22 +1103,22 @@ QString GameWidget::equippedAffixesText(const EntityView &entity) const
         switch (entity.equippedAffixes[i])
         {
         case AffixId::Burn:
-            text += "Burn";
+            text += "燃烧";
             break;
         case AffixId::Slow:
-            text += "Slow";
+            text += "减速";
             break;
         case AffixId::Berserk:
-            text += "Berserk";
+            text += "狂暴";
             break;
         case AffixId::Swift:
-            text += "Swift";
+            text += "迅捷";
             break;
         case AffixId::Blink:
-            text += "Blink";
+            text += "闪现";
             break;
         default:
-            text += "Unknown";
+            text += "未知";
             break;
         }
     }
@@ -1130,7 +1130,7 @@ QString GameWidget::activeAffixesText(const EntityView &entity) const
 {
     if (entity.activeAffixNames.empty())
     {
-        return "None";
+        return "无";
     }
 
     QString text;
@@ -1142,7 +1142,32 @@ QString GameWidget::activeAffixesText(const EntityView &entity) const
             text += ", ";
         }
 
-        text += QString::fromStdString(entity.activeAffixNames[i]);
+        const std::string &name = entity.activeAffixNames[i];
+
+        if (name == "Burn")
+        {
+            text += "燃烧";
+        }
+        else if (name == "Slow")
+        {
+            text += "减速";
+        }
+        else if (name == "Berserk")
+        {
+            text += "狂暴";
+        }
+        else if (name == "Swift")
+        {
+            text += "迅捷";
+        }
+        else if (name == "Blink")
+        {
+            text += "闪现";
+        }
+        else
+        {
+            text += QString::fromStdString(name);
+        }
     }
 
     return text;
@@ -1160,50 +1185,50 @@ void GameWidget::drawBottomHint(QPainter &painter)
 
     if (game.isGameOver())
     {
-        text = game.isVictory() ? "Victory! Press Reset to play again." : "Defeat. Press Reset to try again.";
+        text = game.isVictory() ? "胜利！点击重置可重新开始。" : "失败。点击重置可再次挑战。";
     }
     else if (uiMode == UiMode::BuildPreview)
     {
-        text = "Confirm or cancel tower placement.";
+        text = "确认或取消本次防御塔建造。";
     }
     else if (selectedCellCanShowBuildCards())
     {
-        text = "Choose a tower card to preview placement.";
+        text = "选择一张防御塔卡牌进行建造预览。";
     }
     else if (selectedX >= 0 && selectedY >= 0)
     {
         const EntityView entity = game.getEntityViewAt(selectedX, selectedY);
-        text = QString("Selected (%1, %2)").arg(selectedX).arg(selectedY);
+        text = QString("已选择 (%1, %2)").arg(selectedX).arg(selectedY);
 
         if (entity.kind == EntityKind::MeleeTower)
         {
-            text += QString(" - Melee Tower | HP %1/%2 | Affixes: %3 | Sell returns tower + affixes")
+            text += QString(" - 近战塔 | 生命 %1/%2 | 词缀：%3 | 出售时返还防御塔和词缀金币")
                         .arg(entity.hp)
                         .arg(entity.maxHp)
                         .arg(equippedAffixesText(entity));
         }
         else if (entity.kind == EntityKind::RangedTower)
         {
-            text += QString(" - Ranged Tower | HP %1/%2 | Affixes: %3 | Sell returns tower + affixes")
+            text += QString(" - 远程塔 | 生命 %1/%2 | 词缀：%3 | 出售时返还防御塔和词缀金币")
                         .arg(entity.hp)
                         .arg(entity.maxHp)
                         .arg(equippedAffixesText(entity));
         }
         else if (entity.kind == EntityKind::Enemy)
         {
-            text += QString(" - Enemy | HP %1/%2 | Effects: %3")
+            text += QString(" - 敌人 | 生命 %1/%2 | 状态：%3")
                         .arg(entity.hp)
                         .arg(entity.maxHp)
                         .arg(activeAffixesText(entity));
         }
         else
         {
-            text += " - Empty";
+            text += " - 空地";
         }
     }
     else
     {
-        text = "Select a cell to interact.";
+        text = "请选择一个地图格子。";
     }
 
     if (!game.getLastMessage().empty())
@@ -1229,7 +1254,7 @@ void GameWidget::drawPauseOverlay(QPainter &painter)
 
     painter.setPen(QColor(30, 35, 40));
     painter.setFont(QFont("Arial", 18, QFont::Bold));
-    painter.drawText(QRect(panel.left(), panel.top() + 24, panel.width(), 36), Qt::AlignCenter, "Paused");
+    painter.drawText(QRect(panel.left(), panel.top() + 24, panel.width(), 36), Qt::AlignCenter, "已暂停");
 
     const QRect resumeRect = resumeButtonRect();
     painter.setBrush(QColor(70, 150, 95));
@@ -1238,7 +1263,7 @@ void GameWidget::drawPauseOverlay(QPainter &painter)
 
     painter.setPen(Qt::white);
     painter.setFont(QFont("Arial", 12, QFont::Bold));
-    painter.drawText(resumeRect, Qt::AlignCenter, "Continue");
+    painter.drawText(resumeRect, Qt::AlignCenter, "继续");
 
     const QRect resetRect = resetButtonRect();
     painter.setBrush(QColor(210, 95, 80));
@@ -1246,7 +1271,7 @@ void GameWidget::drawPauseOverlay(QPainter &painter)
     painter.drawRoundedRect(resetRect, 6, 6);
 
     painter.setPen(Qt::white);
-    painter.drawText(resetRect, Qt::AlignCenter, "Reset");
+    painter.drawText(resetRect, Qt::AlignCenter, "重置");
 
     const QRect closeRect = closePauseButtonRect();
     painter.setBrush(QColor(95, 105, 115));
@@ -1270,8 +1295,8 @@ void GameWidget::drawGameOverOverlay(QPainter &painter)
 
     const bool victory = game.isVictory();
 
-    const QString title = victory ? "Victory" : "Defeat";
-    const QString subtitle = victory ? "All enemies were cleared." : "The base has fallen.";
+    const QString title = victory ? "胜利" : "失败";
+    const QString subtitle = victory ? "所有敌人都已被清除。" : "基地已被攻破。";
     const QColor titleColor = victory ? QColor(60, 150, 90) : QColor(200, 75, 65);
 
     painter.setPen(titleColor);
@@ -1292,5 +1317,5 @@ void GameWidget::drawGameOverOverlay(QPainter &painter)
 
     painter.setPen(Qt::white);
     painter.setFont(QFont("Arial", 12, QFont::Bold));
-    painter.drawText(resetRect, Qt::AlignCenter, "Reset");
+    painter.drawText(resetRect, Qt::AlignCenter, "重置");
 }
