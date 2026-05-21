@@ -27,7 +27,9 @@ MainWindow::MainWindow(QWidget *parent)
       pauseButton(new QPushButton("暂停", this)),
       resetButton(new QPushButton("重置", this)),
       spawnTimer(0.0f),
-      spawnInterval(1.0f)
+      spawnInterval(1.0f),
+      startWaveButton(new QPushButton("启动波动", this)),
+      waveStarted(false)
 {
     initializeGame();
     setupUi();
@@ -46,13 +48,6 @@ void MainWindow::initializeGame()
     }
 
     game.setTotalEnemiesToSpawn(5);
-
-    game.placeMeleeTowerAt(5, 5);
-    game.placeRangedTowerAt(5, 4);
-
-    game.buyAffixAt(5, 4, AffixId::Burn);
-    game.buyAffixAt(5, 4, AffixId::Slow);
-    game.buyAffixAt(5, 5, AffixId::Berserk);
 }
 
 void MainWindow::setupUi()
@@ -104,6 +99,7 @@ void MainWindow::setupUi()
     sideLayout->addWidget(buildGroup);
     sideLayout->addWidget(buyGroup);
     sideLayout->addWidget(sellGroup);
+    sideLayout->addWidget(startWaveButton);
     sideLayout->addWidget(pauseButton);
     sideLayout->addWidget(resetButton);
     sideLayout->addStretch();
@@ -129,24 +125,32 @@ void MainWindow::setupConnections()
 
             if (!game.isGameOver() && !game.isPaused())
             {
-                spawnTimer += deltaTime;
-
-                if (spawnTimer >= spawnInterval)
+                if (waveStarted)
                 {
-                    game.spawnEnemy();
-                    spawnTimer = 0.0f;
-                }
+                    spawnTimer += deltaTime;
 
-                game.update(deltaTime);
+                    if (spawnTimer >= spawnInterval)
+                    {
+                        game.spawnEnemy();
+                        spawnTimer = 0.0f;
+                    }
+
+                    game.update(deltaTime);
+                }
             }
 
             gameWidget->update();
             refreshSelectedInfo();
-            refreshActionButtons(); });
+
+            if (game.isGameOver())
+            {
+                refreshActionButtons();
+            } });
 
     connect(placeMeleeButton, &QPushButton::clicked, this, &MainWindow::handlePlaceMelee);
     connect(placeRangedButton, &QPushButton::clicked, this, &MainWindow::handlePlaceRanged);
     connect(sellTowerButton, &QPushButton::clicked, this, &MainWindow::handleSellTower);
+    connect(startWaveButton, &QPushButton::clicked, this, &MainWindow::handleStartWave);
 
     connect(buyBurnButton, &QPushButton::clicked, this, [this]()
             { handleBuyAffix(AffixId::Burn); });
@@ -248,6 +252,7 @@ void MainWindow::refreshActionButtons()
 
     pauseButton->setEnabled(gameRunning);
     resetButton->setEnabled(true);
+    startWaveButton->setEnabled(gameRunning && !waveStarted);
 
     if (!gameRunning || !hasSelection)
     {
@@ -260,14 +265,8 @@ void MainWindow::refreshActionButtons()
 
     if (entity.kind == EntityKind::None)
     {
-        placeMeleeButton->setEnabled(
-            game.getMap().canPlaceMeleeTower(x, y) &&
-            game.canAfford(MeleeTower::COST));
-
-        placeRangedButton->setEnabled(
-            game.getMap().canPlaceRangedTower(x, y) &&
-            game.canAfford(RangedTower::COST));
-
+        placeMeleeButton->setEnabled(game.canPlaceMeleeTowerAt(x, y));
+        placeRangedButton->setEnabled(game.canPlaceRangedTowerAt(x, y));
         return;
     }
 
@@ -436,11 +435,14 @@ void MainWindow::handleReset()
     game.reset();
     initializeGame();
 
+    waveStarted = false;
     spawnTimer = 0.0f;
+
     pauseButton->setText("暂停");
+    startWaveButton->setEnabled(true);
 
     gameWidget->setSelectedCell(-1, -1);
-    selectedInfoLabel->setText("未选中任何对象");
+    selectedInfoLabel->setText("已选择：无");
 
     gameWidget->update();
     updateMessageLabel();
@@ -498,4 +500,20 @@ QString MainWindow::affixIdToText(AffixId affixId) const
     default:
         return "Unknown";
     }
+}
+
+void MainWindow::handleStartWave()
+{
+    if (game.isGameOver())
+    {
+        return;
+    }
+
+    waveStarted = true;
+    spawnTimer = spawnInterval;
+    startWaveButton->setEnabled(false);
+
+    messageLabel->setText("Wave started.");
+    gameWidget->update();
+    refreshActionButtons();
 }

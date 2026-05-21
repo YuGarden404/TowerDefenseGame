@@ -169,16 +169,11 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
         return false;
     }
 
-    for (const auto &e : allEntities)
+    if (hasTowerAt(ix, iy))
     {
-        if (dynamic_cast<Tower *>(e.get()) &&
-            static_cast<int>(e->getX() + 0.5f) == ix &&
-            static_cast<int>(e->getY() + 0.5f) == iy)
-        {
-            setLastMessage("放置失败：该位置已有防御塔");
-            std::cout << lastMessage << std::endl;
-            return false;
-        }
+        setLastMessage("放置失败：该位置已有防御塔");
+        std::cout << lastMessage << std::endl;
+        return false;
     }
 
     addEntity(std::move(tower));
@@ -553,4 +548,38 @@ bool Game::sellTower(int x, int y)
 bool Game::sellTowerAt(int x, int y)
 {
     return sellTower(x, y);
+}
+
+bool Game::hasTowerAt(int x, int y) const
+{
+    for (const auto &entity : allEntities)
+    {
+        if (!entity || entity->isDead())
+        {
+            continue;
+        }
+
+        if (dynamic_cast<Tower *>(entity.get()) &&
+            static_cast<int>(entity->getX() + 0.5f) == x &&
+            static_cast<int>(entity->getY() + 0.5f) == y)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Game::canPlaceMeleeTowerAt(int x, int y) const
+{
+    return canAfford(MeleeTower::COST) &&
+           map.canPlaceMeleeTower(x, y) &&
+           !hasTowerAt(x, y);
+}
+
+bool Game::canPlaceRangedTowerAt(int x, int y) const
+{
+    return canAfford(RangedTower::COST) &&
+           map.canPlaceRangedTower(x, y) &&
+           !hasTowerAt(x, y);
 }

@@ -54,6 +54,7 @@ class Game
     bool placeTower(std::unique_ptr<Tower> tower);
 
     bool sellTower(int x, int y);
+    [[nodiscard]] bool hasTowerAt(int x, int y) const;
 
 public:
     // 公共成员函数
@@ -117,6 +118,9 @@ public:
     void reset();
 
     bool sellTowerAt(int x, int y);
+
+    [[nodiscard]] bool canPlaceMeleeTowerAt(int x, int y) const;
+    [[nodiscard]] bool canPlaceRangedTowerAt(int x, int y) const;
 };
 
 #endif // GAME_H
