@@ -10,8 +10,7 @@
 enum class UiMode
 {
     Normal,
-    BuildPreview,
-    PauseMenu
+    BuildPreview
 };
 
 enum class BuildChoice
@@ -40,11 +39,7 @@ public:
 
     void setWaveStarted(bool started);
 
-    [[nodiscard]] int getSelectedX() const { return selectedX; }
-    [[nodiscard]] int getSelectedY() const { return selectedY; }
-
 signals:
-    void cellClicked(int x, int y);
     void startWaveRequested();
     void pauseRequested();
     void resumeRequested();
@@ -124,16 +119,12 @@ private:
     [[nodiscard]] QRect closePauseButtonRect() const;
     [[nodiscard]] QRect gameOverPanelRect() const;
     [[nodiscard]] QRect gameOverResetButtonRect() const;
+    [[nodiscard]] QRect cardRectAt(int index) const;
 
-    [[nodiscard]] QRect meleeCardRect() const;
-    [[nodiscard]] QRect rangedCardRect() const;
     [[nodiscard]] QRect confirmBuildRect() const;
     [[nodiscard]] QRect cancelBuildRect() const;
 
     [[nodiscard]] QRect selectedTowerSellRect() const;
-    [[nodiscard]] QRect burnAffixCardRect() const;
-    [[nodiscard]] QRect slowAffixCardRect() const;
-    [[nodiscard]] QRect berserkAffixCardRect() const;
 };
 
 #endif // GAMEWIDGET_H

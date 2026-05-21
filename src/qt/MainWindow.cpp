@@ -94,12 +94,13 @@ void MainWindow::handleResume()
 void MainWindow::handleReset()
 {
     game.reset();
-    initializeGame();
 
     waveStarted = false;
     spawnTimer = 0.0f;
-
     game.setPaused(false);
+
+    initializeGame();
+
     gameWidget->setWaveStarted(false);
     gameWidget->clearSelection();
     gameWidget->update();

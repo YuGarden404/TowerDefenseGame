@@ -10,6 +10,13 @@
 
 namespace
 {
+    constexpr int CardStartX = 24;
+    constexpr int CardBottomMargin = 136;
+    constexpr int CardWidth = 128;
+    constexpr int CardHeight = 82;
+    constexpr int CardGap = 12;
+    constexpr int TwoCardHitWidth = CardWidth * 2 + CardGap;
+
     bool hasActiveAffix(const EntityView &entity, const std::string &name)
     {
         return std::find(entity.activeAffixNames.begin(),
@@ -135,14 +142,14 @@ void GameWidget::mousePressEvent(QMouseEvent *event)
 
     if (selectedEntityIsTower() &&
         (selectedTowerSellRect().contains(px, py) ||
-         QRect(24, height() - 136, 420, 82).contains(px, py)))
+         QRect(CardStartX, height() - CardBottomMargin, TwoCardHitWidth, CardHeight).contains(px, py)))
     {
         handleTowerActionClick(px, py);
         return;
     }
 
     if (selectedCellCanShowBuildCards() &&
-        QRect(24, height() - 136, 280, 82).contains(px, py))
+        QRect(CardStartX, height() - CardBottomMargin, TwoCardHitWidth, CardHeight).contains(px, py))
     {
         handleBuildCardClick(px, py);
         return;
@@ -206,21 +213,15 @@ void GameWidget::handleMapClick(int pixelX, int pixelY)
     const int y = (pixelY - mapOffsetY) / tileSize;
 
     setSelectedCell(x, y);
-    emit cellClicked(x, y);
 }
 
 void GameWidget::handleBuildCardClick(int pixelX, int pixelY)
 {
-    int cardX = 24;
-    const int cardY = height() - 136;
-    const int cardW = 128;
-    const int cardH = 82;
-    const int gap = 12;
+    int cardIndex = 0;
 
     if (selectedCellCanPlaceMelee())
     {
-        QRect meleeRect(cardX, cardY, cardW, cardH);
-        if (meleeRect.contains(pixelX, pixelY))
+        if (cardRectAt(cardIndex).contains(pixelX, pixelY))
         {
             buildChoice = BuildChoice::MeleeTower;
             uiMode = UiMode::BuildPreview;
@@ -228,13 +229,12 @@ void GameWidget::handleBuildCardClick(int pixelX, int pixelY)
             return;
         }
 
-        cardX += cardW + gap;
+        ++cardIndex;
     }
 
     if (selectedCellCanPlaceRanged())
     {
-        QRect rangedRect(cardX, cardY, cardW, cardH);
-        if (rangedRect.contains(pixelX, pixelY))
+        if (cardRectAt(cardIndex).contains(pixelX, pixelY))
         {
             buildChoice = BuildChoice::RangedTower;
             uiMode = UiMode::BuildPreview;
@@ -262,7 +262,6 @@ void GameWidget::handleBuildPreviewClick(int pixelX, int pixelY)
         const int x = (pixelX - mapOffsetX) / tileSize;
         const int y = (pixelY - mapOffsetY) / tileSize;
         setSelectedCell(x, y);
-        emit cellClicked(x, y);
         return;
     }
 
@@ -309,21 +308,6 @@ QRect GameWidget::selectedTowerSellRect() const
     return QRect(cell.right() + 6, cell.top() + 4, 28, 28);
 }
 
-QRect GameWidget::burnAffixCardRect() const
-{
-    return QRect(24, height() - 136, 128, 82);
-}
-
-QRect GameWidget::slowAffixCardRect() const
-{
-    return QRect(164, height() - 136, 128, 82);
-}
-
-QRect GameWidget::berserkAffixCardRect() const
-{
-    return QRect(304, height() - 136, 128, 82);
-}
-
 void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
 {
     if (!hasSelectedCell())
@@ -340,15 +324,9 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
 
     const EntityView entity = selectedEntity();
 
-    int cardX = 24;
-    const int cardY = height() - 136;
-    const int cardW = 128;
-    const int cardH = 82;
-    const int gap = 12;
-
     if (entity.kind == EntityKind::RangedTower)
     {
-        QRect burnRect(cardX, cardY, cardW, cardH);
+        const QRect burnRect = cardRectAt(0);
         if (burnRect.contains(pixelX, pixelY) &&
             selectedEntityCanBuyAffix(AffixId::Burn))
         {
@@ -357,9 +335,7 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
             return;
         }
 
-        cardX += cardW + gap;
-
-        QRect slowRect(cardX, cardY, cardW, cardH);
+        const QRect slowRect = cardRectAt(1);
         if (slowRect.contains(pixelX, pixelY) &&
             selectedEntityCanBuyAffix(AffixId::Slow))
         {
@@ -370,7 +346,7 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
     }
     else if (entity.kind == EntityKind::MeleeTower)
     {
-        QRect berserkRect(cardX, cardY, cardW, cardH);
+        const QRect berserkRect = cardRectAt(0);
         if (berserkRect.contains(pixelX, pixelY) &&
             selectedEntityCanBuyAffix(AffixId::Berserk))
         {
@@ -543,14 +519,12 @@ QRect GameWidget::gameOverResetButtonRect() const
     return QRect(panel.left() + 90, panel.top() + 148, 200, 40);
 }
 
-QRect GameWidget::meleeCardRect() const
+QRect GameWidget::cardRectAt(int index) const
 {
-    return QRect(24, height() - 136, 128, 82);
-}
-
-QRect GameWidget::rangedCardRect() const
-{
-    return QRect(164, height() - 136, 128, 82);
+    return QRect(CardStartX + index * (CardWidth + CardGap),
+                 height() - CardBottomMargin,
+                 CardWidth,
+                 CardHeight);
 }
 
 QRect GameWidget::confirmBuildRect() const
@@ -817,23 +791,16 @@ void GameWidget::drawAffixCards(QPainter &painter)
 {
     const EntityView entity = selectedEntity();
 
-    int cardX = 24;
-    const int cardY = height() - 136;
-    const int cardW = 128;
-    const int cardH = 82;
-    const int gap = 12;
-
     if (entity.kind == EntityKind::RangedTower)
     {
         drawAffixCard(painter,
-                      QRect(cardX, cardY, cardW, cardH),
+                      cardRectAt(0),
                       AffixChoice::Burn,
                       selectedEntityCanBuyAffix(AffixId::Burn),
                       selectedEntityHasAffix(AffixId::Burn));
-        cardX += cardW + gap;
 
         drawAffixCard(painter,
-                      QRect(cardX, cardY, cardW, cardH),
+                      cardRectAt(1),
                       AffixChoice::Slow,
                       selectedEntityCanBuyAffix(AffixId::Slow),
                       selectedEntityHasAffix(AffixId::Slow));
@@ -841,7 +808,7 @@ void GameWidget::drawAffixCards(QPainter &painter)
     else if (entity.kind == EntityKind::MeleeTower)
     {
         drawAffixCard(painter,
-                      QRect(cardX, cardY, cardW, cardH),
+                      cardRectAt(0),
                       AffixChoice::Berserk,
                       selectedEntityCanBuyAffix(AffixId::Berserk),
                       selectedEntityHasAffix(AffixId::Berserk));
@@ -907,25 +874,21 @@ void GameWidget::drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice
 
 void GameWidget::drawBuildCards(QPainter &painter)
 {
-    int cardX = 24;
-    const int cardY = height() - 136;
-    const int cardW = 128;
-    const int cardH = 82;
-    const int gap = 12;
+    int cardIndex = 0;
 
     if (selectedCellCanPlaceMelee())
     {
         drawBuildCard(painter,
-                      QRect(cardX, cardY, cardW, cardH),
+                      cardRectAt(cardIndex),
                       BuildChoice::MeleeTower,
                       true);
-        cardX += cardW + gap;
+        ++cardIndex;
     }
 
     if (selectedCellCanPlaceRanged())
     {
         drawBuildCard(painter,
-                      QRect(cardX, cardY, cardW, cardH),
+                      cardRectAt(cardIndex),
                       BuildChoice::RangedTower,
                       true);
     }
