@@ -328,7 +328,7 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
     {
         const QRect burnRect = cardRectAt(0);
         if (burnRect.contains(pixelX, pixelY) &&
-            selectedEntityCanBuyAffix(AffixId::Burn))
+            game.canBuyAffixAt(selectedX, selectedY, AffixId::Burn))
         {
             game.buyAffixAt(selectedX, selectedY, AffixId::Burn);
             update();
@@ -337,7 +337,7 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
 
         const QRect slowRect = cardRectAt(1);
         if (slowRect.contains(pixelX, pixelY) &&
-            selectedEntityCanBuyAffix(AffixId::Slow))
+            game.canBuyAffixAt(selectedX, selectedY, AffixId::Slow))
         {
             game.buyAffixAt(selectedX, selectedY, AffixId::Slow);
             update();
@@ -348,7 +348,7 @@ void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
     {
         const QRect berserkRect = cardRectAt(0);
         if (berserkRect.contains(pixelX, pixelY) &&
-            selectedEntityCanBuyAffix(AffixId::Berserk))
+            game.canBuyAffixAt(selectedX, selectedY, AffixId::Berserk))
         {
             game.buyAffixAt(selectedX, selectedY, AffixId::Berserk);
             update();
@@ -383,35 +383,6 @@ bool GameWidget::selectedEntityHasAffix(AffixId affixId) const
     return std::find(entity.equippedAffixes.begin(),
                      entity.equippedAffixes.end(),
                      affixId) != entity.equippedAffixes.end();
-}
-
-bool GameWidget::selectedEntityCanBuyAffix(AffixId affixId) const
-{
-    const EntityView entity = selectedEntity();
-
-    if (selectedEntityHasAffix(affixId))
-    {
-        return false;
-    }
-
-    if (!game.canAfford(getAffixBuyPrice(affixId)))
-    {
-        return false;
-    }
-
-    if ((affixId == AffixId::Burn || affixId == AffixId::Slow) &&
-        entity.kind == EntityKind::RangedTower)
-    {
-        return true;
-    }
-
-    if (affixId == AffixId::Berserk &&
-        entity.kind == EntityKind::MeleeTower)
-    {
-        return true;
-    }
-
-    return false;
 }
 
 bool GameWidget::isInsideMapPixel(int pixelX, int pixelY) const
@@ -796,13 +767,13 @@ void GameWidget::drawAffixCards(QPainter &painter)
         drawAffixCard(painter,
                       cardRectAt(0),
                       AffixChoice::Burn,
-                      selectedEntityCanBuyAffix(AffixId::Burn),
+                      game.canBuyAffixAt(selectedX, selectedY, AffixId::Burn),
                       selectedEntityHasAffix(AffixId::Burn));
 
         drawAffixCard(painter,
                       cardRectAt(1),
                       AffixChoice::Slow,
-                      selectedEntityCanBuyAffix(AffixId::Slow),
+                      game.canBuyAffixAt(selectedX, selectedY, AffixId::Slow),
                       selectedEntityHasAffix(AffixId::Slow));
     }
     else if (entity.kind == EntityKind::MeleeTower)
@@ -810,7 +781,7 @@ void GameWidget::drawAffixCards(QPainter &painter)
         drawAffixCard(painter,
                       cardRectAt(0),
                       AffixChoice::Berserk,
-                      selectedEntityCanBuyAffix(AffixId::Berserk),
+                      game.canBuyAffixAt(selectedX, selectedY, AffixId::Berserk),
                       selectedEntityHasAffix(AffixId::Berserk));
     }
 }

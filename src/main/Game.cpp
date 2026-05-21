@@ -345,6 +345,37 @@ void Game::setTotalEnemiesToSpawn(const int total)
     }
 }
 
+bool Game::canBuyAffixAt(int x, int y, AffixId affixId) const
+{
+    for (const auto &entity : allEntities)
+    {
+        if (!entity || entity->isDead())
+        {
+            continue;
+        }
+
+        if (static_cast<int>(entity->getX() + 0.5f) != x ||
+            static_cast<int>(entity->getY() + 0.5f) != y)
+        {
+            continue;
+        }
+
+        if (!canPurchaseAffixFor(*entity, affixId))
+        {
+            return false;
+        }
+
+        if (entity->hasEquippedAffix(affixId))
+        {
+            return false;
+        }
+
+        return canAfford(getAffixBuyPrice(affixId));
+    }
+
+    return false;
+}
+
 bool Game::purchaseAffix(int x, int y, AffixId affixId)
 {
     auto entity = findEntityAt(x, y);

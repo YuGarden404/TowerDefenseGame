@@ -104,6 +104,8 @@ public:
     // 在指定格子放置远程塔
     bool placeRangedTowerAt(int x, int y);
 
+    [[nodiscard]] bool canBuyAffixAt(int x, int y, AffixId affixId) const;
+
     // GUI 友好的购买接口，内部调用 purchaseAffix
     bool buyAffixAt(int x, int y, AffixId affixId);
 

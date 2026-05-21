@@ -97,7 +97,6 @@ private:
     [[nodiscard]] EntityView selectedEntity() const;
     [[nodiscard]] bool selectedEntityIsTower() const;
     [[nodiscard]] bool selectedEntityHasAffix(AffixId affixId) const;
-    [[nodiscard]] bool selectedEntityCanBuyAffix(AffixId affixId) const;
 
     [[nodiscard]] bool isInsideMapPixel(int pixelX, int pixelY) const;
     [[nodiscard]] bool hasSelectedCell() const;
