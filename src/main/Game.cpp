@@ -2,6 +2,7 @@
 // Created by Lenovo on 26-1-12.
 //
 #include "Game.h"
+
 #include <algorithm>
 
 namespace
@@ -20,6 +21,7 @@ namespace
         view.hp = entity->getHp();
         view.maxHp = entity->getMaxHp();
         view.equippedAffixes = entity->getEquippedAffixes();
+
         for (const auto &affix : entity->getAffixes())
         {
             if (affix && !affix->isExpired())
@@ -55,7 +57,7 @@ Game::Game(const int w, const int h)
       gameOver(false),
       victory(false),
       paused(false),
-      lastMessage("Game started")
+      lastMessage("游戏已开始")
 {
     allEntities.clear();
 }
@@ -70,7 +72,10 @@ void Game::update(const float deltaTime)
     for (auto &entity : allEntities)
     {
         if (!entity || entity->isDead())
+        {
             continue;
+        }
+
         entity->update(deltaTime, allEntities);
     }
 
@@ -87,7 +92,7 @@ void Game::update(const float deltaTime)
                            {
                                if (enemy->hasReachedEnd())
                                {
-                                   playerHp--;
+                                   --playerHp;
                                    if (playerHp <= 0)
                                    {
                                        playerHp = 0;
@@ -129,12 +134,7 @@ void Game::clearLastMessage()
 
 void Game::spawnEnemy()
 {
-    if (gameOver)
-    {
-        return;
-    }
-
-    if (spawnedEnemyCount >= totalEnemiesToSpawn)
+    if (gameOver || spawnedEnemyCount >= totalEnemiesToSpawn)
     {
         return;
     }
@@ -146,7 +146,7 @@ void Game::spawnEnemy()
     }
 
     addEntity(std::move(enemy));
-    spawnedEnemyCount++;
+    ++spawnedEnemyCount;
 }
 
 bool Game::placeTower(std::unique_ptr<Tower> tower)
@@ -156,8 +156,8 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
         return false;
     }
 
-    int ix = static_cast<int>(tower->getX() + 0.5f);
-    int iy = static_cast<int>(tower->getY() + 0.5f);
+    const int ix = static_cast<int>(tower->getX() + 0.5f);
+    const int iy = static_cast<int>(tower->getY() + 0.5f);
 
     bool canPlace = false;
     if (dynamic_cast<MeleeTower *>(tower.get()))
@@ -171,15 +171,13 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
 
     if (!canPlace)
     {
-        setLastMessage("放置失败：无法在该地块上放置防御塔");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("放置失败：无法在该地块上放置防御塔。");
         return false;
     }
 
     if (hasTowerAt(ix, iy))
     {
-        setLastMessage("放置失败：该位置已有防御塔");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("放置失败：该位置已有防御塔。");
         return false;
     }
 
@@ -190,7 +188,10 @@ bool Game::placeTower(std::unique_ptr<Tower> tower)
 void Game::addEntity(std::unique_ptr<Entity> entity)
 {
     if (!entity)
+    {
         return;
+    }
+
     allEntities.emplace_back(std::move(entity));
 }
 
@@ -203,15 +204,16 @@ bool Game::spendMoney(int amount)
 {
     if (amount < 0)
     {
-        setLastMessage("消费失败：金额必须为正数");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("消费失败：金额必须为正数。");
         return false;
     }
+
     if (canAfford(amount))
     {
         money -= amount;
         return true;
     }
+
     return false;
 }
 
@@ -220,18 +222,15 @@ void Game::addMoney(int amount)
     if (amount > 0)
     {
         money += amount;
+        return;
     }
-    else
-    {
-        setLastMessage("充值失败：金额必须为正数");
-        std::cout << lastMessage << std::endl;
-    }
+
+    setLastMessage("充值失败：金额必须为正数。");
 }
 
-// 给指定坐标的实体购买并装备词缀
 bool Game::canEquipAffixTo(const Entity &entity, AffixId affixId) const
 {
-    AffixTargetType targetType = getAffixTargetType(affixId);
+    const AffixTargetType targetType = getAffixTargetType(affixId);
 
     if (targetType == AffixTargetType::EnemyOnly)
     {
@@ -251,28 +250,24 @@ bool Game::canEquipAffixTo(const Entity &entity, AffixId affixId) const
     return false;
 }
 
-// 出售指定坐标实体身上的词缀，返还购买价 80%
 bool Game::sellAffix(int x, int y, AffixId affixId)
 {
     auto entity = findEntityAt(x, y);
     if (!entity)
     {
-        setLastMessage("出售失败：未找到指定实体");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("出售失败：未找到指定实体。");
         return false;
     }
 
     if (!canPurchaseAffixFor(*entity, affixId))
     {
-        setLastMessage("出售失败：无法在该实体上出售此词缀");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("出售失败：无法在该实体上出售此词缀。");
         return false;
     }
 
     if (!entity->hasEquippedAffix(affixId))
     {
-        setLastMessage("出售失败：该实体未装备此词缀");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("出售失败：该实体未装备此词缀。");
         return false;
     }
 
@@ -280,27 +275,28 @@ bool Game::sellAffix(int x, int y, AffixId affixId)
     {
         addMoney(getAffixSellPrice(affixId));
         setLastMessage("出售词缀成功。");
-        std::cout << lastMessage << std::endl;
         return true;
     }
 
     setLastMessage("出售词缀失败：卸载词缀时发生未知错误。");
-    std::cout << lastMessage << std::endl;
     return false;
 }
 
-// 根据地图坐标查找该格上的实体
 std::shared_ptr<Entity> Game::findEntityAt(int x, int y)
 {
     for (auto &entity : allEntities)
     {
         if (!entity || entity->isDead())
+        {
             continue;
+        }
+
         if (Entity::euclideanDistance(entity->getX(), entity->getY(), x, y) < 0.5f)
         {
             return entity;
         }
     }
+
     return nullptr;
 }
 
@@ -382,41 +378,36 @@ bool Game::purchaseAffix(int x, int y, AffixId affixId)
     if (!entity)
     {
         setLastMessage("购买词缀失败：未选中任何实体。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (!canPurchaseAffixFor(*entity, affixId))
     {
         setLastMessage("购买词缀失败：无法在该实体上购买此词缀。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (entity->hasEquippedAffix(affixId))
     {
         setLastMessage("购买词缀失败：该实体已装备此词缀。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
-    int cost = getAffixBuyPrice(affixId);
+    const int cost = getAffixBuyPrice(affixId);
     if (!spendMoney(cost))
     {
         setLastMessage("购买词缀失败：金币不足。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
     if (entity->equipAffix(affixId))
     {
         setLastMessage("购买词缀成功。");
-        std::cout << lastMessage << std::endl;
         return true;
     }
+
     addMoney(cost);
     setLastMessage("购买词缀失败：装备词缀时发生未知错误。");
-    std::cout << lastMessage << std::endl;
     return false;
 }
 
@@ -468,7 +459,6 @@ bool Game::placeMeleeTowerAt(int x, int y)
     if (!canAfford(cost))
     {
         setLastMessage("放置失败：金币不足。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -490,7 +480,6 @@ bool Game::placeRangedTowerAt(int x, int y)
     if (!canAfford(cost))
     {
         setLastMessage("放置失败：金币不足。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -535,8 +524,8 @@ void Game::reset()
     gameOver = false;
     victory = false;
     paused = false;
-    setLastMessage("游戏重置。");
-    std::cout << lastMessage << std::endl;
+
+    setLastMessage("游戏已重置。");
 }
 
 bool Game::sellTower(int x, int y)
@@ -545,15 +534,13 @@ bool Game::sellTower(int x, int y)
     if (!entity)
     {
         setLastMessage("出售防御塔失败：选中的位置没有实体。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
     auto *tower = dynamic_cast<Tower *>(entity.get());
     if (!tower)
     {
-        setLastMessage("出售防御塔失败：选中的对象并非防御塔。");
-        std::cout << lastMessage << std::endl;
+        setLastMessage("出售防御塔失败：选中的对象不是防御塔。");
         return false;
     }
 
@@ -571,7 +558,6 @@ bool Game::sellTower(int x, int y)
     if (it == allEntities.end())
     {
         setLastMessage("出售防御塔失败：未找到指定实体。");
-        std::cout << lastMessage << std::endl;
         return false;
     }
 
@@ -579,7 +565,6 @@ bool Game::sellTower(int x, int y)
     money += refund;
 
     setLastMessage("出售防御塔成功，已自动回收塔上词缀。");
-    std::cout << lastMessage << std::endl;
     return true;
 }
 
