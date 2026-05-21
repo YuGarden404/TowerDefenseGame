@@ -88,6 +88,11 @@ void GameWidget::paintEvent(QPaintEvent *event)
     {
         drawBuildCards(painter);
     }
+    else if (selectedEntityIsTower())
+    {
+        drawTowerActions(painter);
+        drawAffixCards(painter);
+    }
 
     drawBottomHint(painter);
 
@@ -114,8 +119,16 @@ void GameWidget::mousePressEvent(QMouseEvent *event)
         return;
     }
 
+    if (selectedEntityIsTower() &&
+        (selectedTowerSellRect().contains(px, py) ||
+         QRect(24, height() - 136, 420, 82).contains(px, py)))
+    {
+        handleTowerActionClick(px, py);
+        return;
+    }
+
     if (selectedCellCanShowBuildCards() &&
-        (meleeCardRect().contains(px, py) || rangedCardRect().contains(px, py)))
+        QRect(24, height() - 136, 280, 82).contains(px, py))
     {
         handleBuildCardClick(px, py);
         return;
@@ -176,19 +189,35 @@ void GameWidget::handleMapClick(int pixelX, int pixelY)
 
 void GameWidget::handleBuildCardClick(int pixelX, int pixelY)
 {
-    if (meleeCardRect().contains(pixelX, pixelY) && selectedCellCanPlaceMelee())
+    int cardX = 24;
+    const int cardY = height() - 136;
+    const int cardW = 128;
+    const int cardH = 82;
+    const int gap = 12;
+
+    if (selectedCellCanPlaceMelee())
     {
-        buildChoice = BuildChoice::MeleeTower;
-        uiMode = UiMode::BuildPreview;
-        update();
-        return;
+        QRect meleeRect(cardX, cardY, cardW, cardH);
+        if (meleeRect.contains(pixelX, pixelY))
+        {
+            buildChoice = BuildChoice::MeleeTower;
+            uiMode = UiMode::BuildPreview;
+            update();
+            return;
+        }
+
+        cardX += cardW + gap;
     }
 
-    if (rangedCardRect().contains(pixelX, pixelY) && selectedCellCanPlaceRanged())
+    if (selectedCellCanPlaceRanged())
     {
-        buildChoice = BuildChoice::RangedTower;
-        uiMode = UiMode::BuildPreview;
-        update();
+        QRect rangedRect(cardX, cardY, cardW, cardH);
+        if (rangedRect.contains(pixelX, pixelY))
+        {
+            buildChoice = BuildChoice::RangedTower;
+            uiMode = UiMode::BuildPreview;
+            update();
+        }
     }
 }
 
@@ -245,6 +274,146 @@ void GameWidget::cancelBuild()
     uiMode = UiMode::Normal;
     buildChoice = BuildChoice::None;
     update();
+}
+
+QRect GameWidget::selectedTowerSellRect() const
+{
+    if (!hasSelectedCell())
+    {
+        return QRect();
+    }
+
+    const QRect cell = mapCellRect(selectedX, selectedY);
+    return QRect(cell.right() + 6, cell.top() + 4, 28, 28);
+}
+
+QRect GameWidget::burnAffixCardRect() const
+{
+    return QRect(24, height() - 136, 128, 82);
+}
+
+QRect GameWidget::slowAffixCardRect() const
+{
+    return QRect(164, height() - 136, 128, 82);
+}
+
+QRect GameWidget::berserkAffixCardRect() const
+{
+    return QRect(304, height() - 136, 128, 82);
+}
+
+void GameWidget::handleTowerActionClick(int pixelX, int pixelY)
+{
+    if (!hasSelectedCell())
+    {
+        return;
+    }
+
+    if (selectedTowerSellRect().contains(pixelX, pixelY))
+    {
+        game.sellTowerAt(selectedX, selectedY);
+        clearSelection();
+        return;
+    }
+
+    const EntityView entity = selectedEntity();
+
+    int cardX = 24;
+    const int cardY = height() - 136;
+    const int cardW = 128;
+    const int cardH = 82;
+    const int gap = 12;
+
+    if (entity.kind == EntityKind::RangedTower)
+    {
+        QRect burnRect(cardX, cardY, cardW, cardH);
+        if (burnRect.contains(pixelX, pixelY) &&
+            selectedEntityCanBuyAffix(AffixId::Burn))
+        {
+            game.buyAffixAt(selectedX, selectedY, AffixId::Burn);
+            update();
+            return;
+        }
+
+        cardX += cardW + gap;
+
+        QRect slowRect(cardX, cardY, cardW, cardH);
+        if (slowRect.contains(pixelX, pixelY) &&
+            selectedEntityCanBuyAffix(AffixId::Slow))
+        {
+            game.buyAffixAt(selectedX, selectedY, AffixId::Slow);
+            update();
+            return;
+        }
+    }
+    else if (entity.kind == EntityKind::MeleeTower)
+    {
+        QRect berserkRect(cardX, cardY, cardW, cardH);
+        if (berserkRect.contains(pixelX, pixelY) &&
+            selectedEntityCanBuyAffix(AffixId::Berserk))
+        {
+            game.buyAffixAt(selectedX, selectedY, AffixId::Berserk);
+            update();
+            return;
+        }
+    }
+
+    update();
+}
+
+EntityView GameWidget::selectedEntity() const
+{
+    if (!hasSelectedCell())
+    {
+        return EntityView{};
+    }
+
+    return game.getEntityViewAt(selectedX, selectedY);
+}
+
+bool GameWidget::selectedEntityIsTower() const
+{
+    const EntityView entity = selectedEntity();
+    return entity.kind == EntityKind::MeleeTower ||
+           entity.kind == EntityKind::RangedTower;
+}
+
+bool GameWidget::selectedEntityHasAffix(AffixId affixId) const
+{
+    const EntityView entity = selectedEntity();
+
+    return std::find(entity.equippedAffixes.begin(),
+                     entity.equippedAffixes.end(),
+                     affixId) != entity.equippedAffixes.end();
+}
+
+bool GameWidget::selectedEntityCanBuyAffix(AffixId affixId) const
+{
+    const EntityView entity = selectedEntity();
+
+    if (selectedEntityHasAffix(affixId))
+    {
+        return false;
+    }
+
+    if (!game.canAfford(getAffixBuyPrice(affixId)))
+    {
+        return false;
+    }
+
+    if ((affixId == AffixId::Burn || affixId == AffixId::Slow) &&
+        entity.kind == EntityKind::RangedTower)
+    {
+        return true;
+    }
+
+    if (affixId == AffixId::Berserk &&
+        entity.kind == EntityKind::MeleeTower)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 bool GameWidget::isInsideMapPixel(int pixelX, int pixelY) const
@@ -590,10 +759,135 @@ void GameWidget::drawEntities(QPainter &painter)
     }
 }
 
+void GameWidget::drawTowerActions(QPainter &painter)
+{
+    const QRect sellRect = selectedTowerSellRect();
+
+    painter.setBrush(QColor(210, 75, 70));
+    painter.setPen(QPen(QColor(140, 45, 40), 2));
+    painter.drawRoundedRect(sellRect, 5, 5);
+
+    painter.setPen(Qt::white);
+    painter.setFont(QFont("Arial", 14, QFont::Bold));
+    painter.drawText(sellRect, Qt::AlignCenter, "X");
+}
+
+void GameWidget::drawAffixCards(QPainter &painter)
+{
+    const EntityView entity = selectedEntity();
+
+    int cardX = 24;
+    const int cardY = height() - 136;
+    const int cardW = 128;
+    const int cardH = 82;
+    const int gap = 12;
+
+    if (entity.kind == EntityKind::RangedTower)
+    {
+        drawAffixCard(painter,
+                      QRect(cardX, cardY, cardW, cardH),
+                      AffixChoice::Burn,
+                      selectedEntityCanBuyAffix(AffixId::Burn),
+                      selectedEntityHasAffix(AffixId::Burn));
+        cardX += cardW + gap;
+
+        drawAffixCard(painter,
+                      QRect(cardX, cardY, cardW, cardH),
+                      AffixChoice::Slow,
+                      selectedEntityCanBuyAffix(AffixId::Slow),
+                      selectedEntityHasAffix(AffixId::Slow));
+    }
+    else if (entity.kind == EntityKind::MeleeTower)
+    {
+        drawAffixCard(painter,
+                      QRect(cardX, cardY, cardW, cardH),
+                      AffixChoice::Berserk,
+                      selectedEntityCanBuyAffix(AffixId::Berserk),
+                      selectedEntityHasAffix(AffixId::Berserk));
+    }
+}
+
+void GameWidget::drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice choice, bool enabled, bool equipped)
+{
+    const QColor background = enabled ? QColor(255, 255, 255, 235) : QColor(210, 214, 218, 210);
+    const QColor border = equipped ? QColor(80, 150, 95) : QColor(90, 105, 125);
+    const QColor textColor = enabled ? QColor(30, 35, 40) : QColor(110, 115, 120);
+
+    painter.setBrush(background);
+    painter.setPen(QPen(border, equipped ? 3 : 2));
+    painter.drawRoundedRect(rect, 8, 8);
+
+    QRect iconRect(rect.left() + 12, rect.top() + 8, rect.width() - 24, 42);
+    QRect costRect(rect.left() + 8, rect.top() + 52, rect.width() - 16, 24);
+
+    QString name;
+    QColor iconColor;
+    int cost = 0;
+
+    switch (choice)
+    {
+    case AffixChoice::Burn:
+        name = "Burn";
+        iconColor = QColor(220, 95, 55);
+        cost = getAffixBuyPrice(AffixId::Burn);
+        break;
+    case AffixChoice::Slow:
+        name = "Slow";
+        iconColor = QColor(95, 190, 235);
+        cost = getAffixBuyPrice(AffixId::Slow);
+        break;
+    case AffixChoice::Berserk:
+        name = "Berserk";
+        iconColor = QColor(180, 80, 190);
+        cost = getAffixBuyPrice(AffixId::Berserk);
+        break;
+    }
+
+    painter.setBrush(enabled ? iconColor : QColor(145, 145, 145));
+    painter.setPen(QPen(QColor(70, 75, 85), 2));
+    painter.drawEllipse(iconRect.center(), 15, 15);
+
+    painter.setPen(Qt::white);
+    painter.setFont(QFont("Arial", 9, QFont::Bold));
+    painter.drawText(iconRect, Qt::AlignCenter, name.left(1));
+
+    painter.setPen(textColor);
+    painter.setFont(QFont("Arial", 9, QFont::Bold));
+
+    if (equipped)
+    {
+        painter.drawText(costRect, Qt::AlignCenter, "Equipped");
+    }
+    else
+    {
+        painter.drawText(costRect, Qt::AlignCenter, QString("%1 %2").arg(name).arg(cost));
+    }
+}
+
 void GameWidget::drawBuildCards(QPainter &painter)
 {
-    drawBuildCard(painter, meleeCardRect(), BuildChoice::MeleeTower, selectedCellCanPlaceMelee());
-    drawBuildCard(painter, rangedCardRect(), BuildChoice::RangedTower, selectedCellCanPlaceRanged());
+    int cardX = 24;
+    const int cardY = height() - 136;
+    const int cardW = 128;
+    const int cardH = 82;
+    const int gap = 12;
+
+    if (selectedCellCanPlaceMelee())
+    {
+        drawBuildCard(painter,
+                      QRect(cardX, cardY, cardW, cardH),
+                      BuildChoice::MeleeTower,
+                      true);
+        cardX += cardW + gap;
+    }
+
+    if (selectedCellCanPlaceRanged())
+    {
+        drawBuildCard(painter,
+                      QRect(cardX, cardY, cardW, cardH),
+                      BuildChoice::RangedTower,
+                      true);
+    }
 }
 
 void GameWidget::drawBuildCard(QPainter &painter, const QRect &rect, BuildChoice choice, bool enabled)
@@ -743,6 +1037,10 @@ void GameWidget::drawBottomHint(QPainter &painter)
     else if (selectedCellCanShowBuildCards())
     {
         text = "Choose a tower card to preview placement.";
+    }
+    else if (selectedEntityIsTower())
+    {
+        text = "Select an affix card or click X to sell the tower.";
     }
     else if (selectedX >= 0 && selectedY >= 0)
     {

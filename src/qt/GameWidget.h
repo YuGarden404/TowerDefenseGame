@@ -21,6 +21,13 @@ enum class BuildChoice
     RangedTower
 };
 
+enum class AffixChoice
+{
+    Burn,
+    Slow,
+    Berserk
+};
+
 class GameWidget : public QWidget
 {
     Q_OBJECT
@@ -72,6 +79,9 @@ private:
     void drawBuildCards(QPainter &painter);
     void drawBuildCard(QPainter &painter, const QRect &rect, BuildChoice choice, bool enabled);
     void drawBuildPreview(QPainter &painter);
+    void drawTowerActions(QPainter &painter);
+    void drawAffixCards(QPainter &painter);
+    void drawAffixCard(QPainter &painter, const QRect &rect, AffixChoice choice, bool enabled, bool equipped);
     void drawBuildGhost(QPainter &painter, const QRect &cell);
     void drawAttackRange(QPainter &painter);
 
@@ -80,9 +90,15 @@ private:
     void handlePauseOverlayClick(int pixelX, int pixelY);
     void handleBuildCardClick(int pixelX, int pixelY);
     void handleBuildPreviewClick(int pixelX, int pixelY);
+    void handleTowerActionClick(int pixelX, int pixelY);
 
     void confirmBuild();
     void cancelBuild();
+
+    [[nodiscard]] EntityView selectedEntity() const;
+    [[nodiscard]] bool selectedEntityIsTower() const;
+    [[nodiscard]] bool selectedEntityHasAffix(AffixId affixId) const;
+    [[nodiscard]] bool selectedEntityCanBuyAffix(AffixId affixId) const;
 
     [[nodiscard]] bool isInsideMapPixel(int pixelX, int pixelY) const;
     [[nodiscard]] bool hasSelectedCell() const;
@@ -105,6 +121,11 @@ private:
     [[nodiscard]] QRect rangedCardRect() const;
     [[nodiscard]] QRect confirmBuildRect() const;
     [[nodiscard]] QRect cancelBuildRect() const;
+
+    [[nodiscard]] QRect selectedTowerSellRect() const;
+    [[nodiscard]] QRect burnAffixCardRect() const;
+    [[nodiscard]] QRect slowAffixCardRect() const;
+    [[nodiscard]] QRect berserkAffixCardRect() const;
 };
 
 #endif // GAMEWIDGET_H
