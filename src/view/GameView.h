@@ -4,6 +4,8 @@
 #include "../components/AffixTypes.h"
 #include "../main/Map.h"
 
+#include <string>
+
 #include <vector>
 
 enum class EntityKind
@@ -25,6 +27,7 @@ struct EntityView
     int maxHp = 0;
 
     std::vector<AffixId> equippedAffixes;
+    std::vector<std::string> activeAffixNames;
 };
 
 #endif // GAMEVIEW_H

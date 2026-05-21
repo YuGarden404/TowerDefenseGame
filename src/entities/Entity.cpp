@@ -115,8 +115,23 @@ void Entity::setSpeed(const float speed)
 void Entity::addAffix(std::unique_ptr<Affix> affix)
 {
     if (!affix)
+    {
         return;
-    affix->onAttach(this); // 词缀的 owner 赋值为自己
+    }
+
+    for (const auto &existingAffix : affixes)
+    {
+        if (existingAffix &&
+            !existingAffix->isExpired() &&
+            existingAffix->getName() == affix->getName())
+        {
+            existingAffix->setDuration(affix->getDuration());
+            std::cout << "Affix refreshed: " << existingAffix->getName() << std::endl;
+            return;
+        }
+    }
+
+    affix->onAttach(this);
     affixes.push_back(std::move(affix));
     std::cout << "Affix added: " << affixes.back()->getName() << std::endl;
 }

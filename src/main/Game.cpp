@@ -20,6 +20,13 @@ namespace
         view.hp = entity->getHp();
         view.maxHp = entity->getMaxHp();
         view.equippedAffixes = entity->getEquippedAffixes();
+        for (const auto &affix : entity->getAffixes())
+        {
+            if (affix && !affix->isExpired())
+            {
+                view.activeAffixNames.push_back(affix->getName());
+            }
+        }
 
         if (dynamic_cast<Enemy *>(entity.get()))
         {
