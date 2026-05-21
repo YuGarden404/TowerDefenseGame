@@ -38,8 +38,11 @@ private:
     QPushButton *pauseButton;
     QPushButton *resetButton;
 
+    QPushButton *startWaveButton;
+
     float spawnTimer;
     float spawnInterval;
+    bool waveStarted;
 
     void initializeGame();
     void setupUi();
@@ -71,6 +74,8 @@ private:
     [[nodiscard]] QString tileTypeToText(TileType type) const;
     [[nodiscard]] QString entityKindToText(EntityKind kind) const;
     [[nodiscard]] QString affixIdToText(AffixId affixId) const;
+
+    void handleStartWave();
 };
 
 #endif // MAINWINDOW_H

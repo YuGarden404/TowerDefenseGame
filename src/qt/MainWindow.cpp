@@ -140,10 +140,10 @@ void MainWindow::setupConnections()
             }
 
             gameWidget->update();
-            refreshSelectedInfo();
 
             if (game.isGameOver())
             {
+                refreshSelectedInfo();
                 refreshActionButtons();
             } });
 

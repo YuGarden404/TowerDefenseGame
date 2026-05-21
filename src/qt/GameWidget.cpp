@@ -35,13 +35,15 @@ void GameWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
 
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing, true);
 
     painter.fillRect(rect(), QColor(245, 247, 250));
 
+    painter.setRenderHint(QPainter::Antialiasing, false);
     drawHud(painter);
     drawMap(painter);
     drawSelection(painter);
+
+    painter.setRenderHint(QPainter::Antialiasing, true);
     drawEntities(painter);
 }
 
